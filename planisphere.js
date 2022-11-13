@@ -69,7 +69,7 @@ class Planisphere{
         //부모 Dom
         this.#parentDom = document.querySelector(this.domId);
         this.#parentDom.innerHTML = '';
-        this.#parentDom.style = 'position:relative;min-width:500px';
+        this.#parentDom.style = 'position:relative';
 
         //배경 
         document.querySelector('body').style = `background-color:${this.gradientBackgroundColor[1]}`;
