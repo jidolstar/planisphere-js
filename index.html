@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=no"> 
+<meta name="description" content="별자리판 웹버전"> 
+<meta name="author" content="JI YONG HO"> 
+<meta name="keywords" content="Planishpere,별자리판"> 
+<title>Planisphere JS</title>
+<style>
+html, body {
+    margin:0;
+    padding:0;
+    overflow: hidden;
+}
+svg text{
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+   user-select: none;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+
+<script src="astro.js"></script>
+<script src="conline.js"></script>
+<script src="conname.js"></script>
+<script src="stars.js"></script>
+<script src="planisphere.js"></script>
+</head>
+<body>
+<div id="planisphere" style="width:100%"></div>
+<script>
+    const planisphere = new Planisphere('#planisphere');
+</script>
+</body>
+</html>
