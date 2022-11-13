@@ -1,4 +1,6 @@
 class Planisphere{
+    #parentDom;
+
     //마우스로 별자리판 회전하기 위해 사용하는 속성 
     #dragging = false;
     #dragDownX = 0;
@@ -65,9 +67,9 @@ class Planisphere{
         this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
 
         //부모 Dom
-        const parentDom = document.querySelector(this.domId);
-        parentDom.innerHTML = '';
-        parentDom.style = 'position:relative;min-width:500px';
+        this.#parentDom = document.querySelector(this.domId);
+        this.#parentDom.innerHTML = '';
+        this.#parentDom.style = 'position:relative;min-width:500px';
 
         //배경 
         document.querySelector('body').style = `background-color:${this.gradientBackgroundColor[1]}`;
@@ -78,61 +80,61 @@ class Planisphere{
         }).from(0, 0).to(0, 1));
 
         //Sky
-        this.skyPanel = SVG().addTo(parentDom)
+        this.skyPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         //Top
-        this.topPanel = SVG().addTo(parentDom)
+        this.topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         //Info
-        this.infoPanel = SVG().addTo(parentDom)
+        this.infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         //마우스로 회전 
-        parentDom.addEventListener('mousedown', (e)=>{
-            if(!this.#dragging){
-                this.#dragging = true;
-                let rect = parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
-                this.#screenCenterX = rect.width * 0.5;
-                this.#screenCenterY = rect.width * 0.5; 
-                this.#dragDownX = e.pageX - this.#screenCenterX;
-                this.#dragDownY = e.pageY - this.#screenCenterY;
-            }
-        });
-        parentDom.addEventListener('mousemove', (e)=>{
-            if(!this.#dragging) return;
-            let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-            let r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
-            let deltaR = AstroMath.mod(r2- r1, AstroMath.TPI) * AstroMath.R2D;
-            this.#currentRotation = this.#lastRotation + deltaR;
-            this.skyPanel.transform({
-                rotate:this.#currentRotation
-            });
-        });
-        parentDom.addEventListener('mouseup', (e)=>{
-            if(this.#dragging){
-                this.#lastRotation = this.#currentRotation;
-                this.#dragging = false;
-            }
-        });
-        parentDom.addEventListener('mouseout', (e)=>{
-            if(this.#dragging){
-                this.#lastRotation = this.#currentRotation;
-                this.#dragging = false;
-            }
-        });
+        this.#parentDom.addEventListener('mousedown', this.#touchStart.bind(this));
+        this.#parentDom.addEventListener('mousemove', this.#touchMove.bind(this));
+        this.#parentDom.addEventListener('mouseup', this.#touchEnd.bind(this));
+        this.#parentDom.addEventListener('mouseout', this.#touchEnd.bind(this));
+        this.#parentDom.addEventListener('touchstart', this.#touchStart.bind(this), true);
+        this.#parentDom.addEventListener('touchmove', this.#touchMove.bind(this), true);
+        this.#parentDom.addEventListener('touchend', this.#touchEnd.bind(this), true);
+        this.#parentDom.addEventListener('touchcancel', this.#touchEnd.bind(this), true);
 
         this.render();
         this.rotateCurrentDate();
 
         this.skyPanel.transform({rotate:this.#lastRotation});
+    }
+    #touchStart(e){
+        if(this.#dragging) return;
+        this.#dragging = true;
+        let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
+        this.#screenCenterX = rect.width * 0.5;
+        this.#screenCenterY = rect.width * 0.5; 
+        this.#dragDownX = e.pageX - this.#screenCenterX;
+        this.#dragDownY = e.pageY - this.#screenCenterY;
+    }
+    #touchMove(e){
+        if(!this.#dragging) return;
+        let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+        let r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
+        let deltaR = AstroMath.mod(r2- r1, AstroMath.TPI) * AstroMath.R2D;
+        this.#currentRotation = this.#lastRotation + deltaR;
+        this.skyPanel.transform({
+            rotate:this.#currentRotation
+        });
+    }
+    #touchEnd(e){
+        if(!this.#dragging) return;
+        this.#lastRotation = this.#currentRotation;
+        this.#dragging = false;
     }
 
     render(){
