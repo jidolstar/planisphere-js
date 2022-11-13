@@ -113,18 +113,21 @@ class Planisphere{
         this.skyPanel.transform({rotate:this.#lastRotation});
     }
     #touchStart(e){
+        //console.log("touchStart");
         if(this.#dragging) return;
         this.#dragging = true;
         let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
         this.#screenCenterX = rect.width * 0.5;
         this.#screenCenterY = rect.width * 0.5; 
-        this.#dragDownX = e.pageX - this.#screenCenterX;
-        this.#dragDownY = e.pageY - this.#screenCenterY;
+        this.#dragDownX =(e.pageX || e.touches[0].pageX) - this.#screenCenterX;
+        this.#dragDownY =(e.pageY || e.touches[0].pageY) - this.#screenCenterY;
+        //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
     }
     #touchMove(e){
+        //console.log("touchMove");
         if(!this.#dragging) return;
         let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-        let r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
+        let r2 = Math.atan2((e.pageY || e.touches[0].pageY) - this.#screenCenterY, (e.pageX || e.touches[0].pageX) - this.#screenCenterX);
         let deltaR = AstroMath.mod(r2- r1, AstroMath.TPI) * AstroMath.R2D;
         this.#currentRotation = this.#lastRotation + deltaR;
         this.skyPanel.transform({
@@ -132,6 +135,7 @@ class Planisphere{
         });
     }
     #touchEnd(e){
+        //console.log("touchEnd");
         if(!this.#dragging) return;
         this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
