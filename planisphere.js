@@ -52,8 +52,8 @@ class Planisphere{
         this.height = 1000;
         this.centerX = this.width * 0.5;
         this.centerY = this.height * 0.5;
-        this.deltaX = 50;
-        this.deltaY = 50;
+        this.deltaX = 30;
+        this.deltaY = 30;
         this.radius = this.width * 0.5 - this.deltaX * 2;
         this.intervalRA = 2;	//적경 라인 간격(단위 h)
         this.intervalDE = 30;	//적위 라인 간격(단위 도)
@@ -63,7 +63,7 @@ class Planisphere{
 
         this.currentDate = new Date();
         this.astroTime = new AstroTime(9, 127, 38);
-        this.deltaCulminationTime = 0; //this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용 		
+        this.deltaCulminationTime = 0;//this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용 		
         this.lct = AstroTime.jd(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, this.currentDate.getDate(), this.currentDate.getHours(), this.currentDate.getMinutes(), this.currentDate.getSeconds());
         this.ut = this.astroTime.LCT2UT(this.lct);
         this.gst = AstroTime.UT2GST(this.ut);
@@ -99,13 +99,13 @@ class Planisphere{
         //Top
         this.topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({position:'absolute', left:0, right:0})
+            .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         //Info
         this.infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({position:'absolute', left:0, right:0})
+            .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         //마우스로 회전 
@@ -120,10 +120,29 @@ class Planisphere{
 
         this.render();
         this.rotateCurrentDate();
-        this.skyPanel.transform({rotate:this.#lastRotation});
-
-        // window.addEventListener('resize', this.#resize.bind(this));
         this.#resize();
+    }
+    rotateCurrentDate(){
+        //Local Sidereal Time 만큼 회전시켜준다.
+        //즉, 남중해야할 별이 화면 아래로 향하게 한다.
+        let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90);
+        this.#lastRotation = rotation;
+        this.#currentRotation = rotation;
+        this.#topPanelRotation = rotation;
+        this.#applyTransform();
+    }
+    #applyTransform() {
+        this.skyPanel.transform({
+            rotate: this.#currentRotation,
+            translate: [this.#panX, this.#panY]
+        });
+        this.topPanel.transform({
+            rotate: this.#topPanelRotation,
+            translate: [this.#panX, this.#panY]
+        });
+        this.infoPanel.transform({
+            translate: [this.#panX, this.#panY]
+        });
     }
     #resize(e){
         const wrapper = this.#parentDom.parentElement;
@@ -143,11 +162,11 @@ class Planisphere{
         const pageX = e.touches ? e.touches[0].pageX : e.pageX;
         const pageY = e.touches ? e.touches[0].pageY : e.pageY;
         
-        // Shift or ctrl 키 또는 두 손가락 터치면 이동 모드
         if ((e.shiftKey || e.ctrlKey) || (e.touches && e.touches.length === 2)) {
             this.#panning = true;
             this.#panStartX = pageX;
             this.#panStartY = pageY;
+            this.#currentRotation = this.#lastRotation;
         } else {
             this.#panning = false;
             this.#dragDownX = pageX - this.#screenCenterX;
@@ -167,34 +186,20 @@ class Planisphere{
             this.#panY += pageY - this.#panStartY;
             this.#panStartX = pageX;
             this.#panStartY = pageY;
-            this.#applyTransform();
         } else {
             // 회전
             let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
             let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
             let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
             this.#currentRotation = this.#lastRotation + deltaR;
-            this.#applyTransform();
         }
+        this.#applyTransform();
     }
     #touchEnd(e){
         if(!this.#dragging) return;
-        if (!this.#panning) this.#lastRotation = this.#currentRotation;
+        if(!this.#panning) this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
         this.#panning = false;
-    }
-    #applyTransform() {
-        this.skyPanel.transform({
-            rotate: this.#currentRotation,
-            translate: [this.#panX, this.#panY]
-        });
-        this.topPanel.transform({
-            rotate: this.#topPanelRotation,
-            translate: [this.#panX, this.#panY]
-        });
-        this.infoPanel.transform({
-            translate: [this.#panX, this.#panY]
-        });
     }
 
     render(){
@@ -239,10 +244,10 @@ class Planisphere{
 			const dec = this.equVector.lat(); //적위 
 			let {x, y} = this.proj.project(ra, dec);	//화면에 투영한 값 받음
             let t = Math.atan2(y,x);
-            let r = this.radius+30;
+            let r = this.radius+28;
             x = r * Math.cos(t);
             y = r * Math.sin(t);
-            canvas.text(`${month}월`).move(cx + x - 12, cy + y - 10)
+            canvas.text(`${month}월`).move(cx + x - 12, cy + y - 13)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
                 .font({fill:this.dateColor, size:this.dateMonthTextSize,
                     family:'Inconsolata',opacity:0.8});
@@ -294,8 +299,8 @@ class Planisphere{
                
                 if(dayOfMonth != 1){
                     if(dayOfMonth % 10 == 0){
-                        const x2 = (r1 + 9.5) * Math.cos(t - 0.4 * AstroMath.D2R);
-                        const y2 = (r1 + 9.5) * Math.sin(t - 0.4 * AstroMath.D2R);
+                        const x2 = (r1 + 6) * Math.cos(t - 0.4 * AstroMath.D2R);
+                        const y2 = (r1 + 6) * Math.sin(t - 0.4 * AstroMath.D2R);
                         //canvas.line(0, 0, cx+x2, cy+y2).stroke({width:1,color:'#f00'});
                         canvas.text(`${dayOfMonth}`).move(cx + x2 - 7, cy + y2  - 3.5)
                         .transform({
@@ -552,12 +557,4 @@ class Planisphere{
      
     }
 
-    rotateCurrentDate(){
-        //Local Sidereal Time 만큼 회전시켜준다.
-        // 즉, 남중해야할 별이 화면 아래로 향하게 한다.
-        let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90);
-        this.topPanel.transform({rotate:rotation});
-        this.#lastRotation = rotation;
-        this.#topPanelRotation = rotation;
-    }
 }
