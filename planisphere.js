@@ -9,6 +9,13 @@ class Planisphere{
     #screenCenterY = 0;
     #currentRotation = 0;
     #lastRotation = 0;
+    #topPanelRotation = 0;
+    
+    #panning = false;
+    #panStartX = 0;
+    #panStartY = 0;
+    #panX = 0;
+    #panY = 0;
 
     constructor(wrapperDomId){
         this.limitDE = -70 * AstroMath.D2R
@@ -79,8 +86,6 @@ class Planisphere{
         planisphereDiv.style.top = '50%';
         planisphereDiv.style.transform = 'translate(-50%, -50%)';
         wrapper.appendChild(planisphereDiv);
-        
-        window.addEventListener('resize', this.#resize.bind(this));
 
         //부모 Dom
         this.#parentDom = planisphereDiv;
@@ -116,6 +121,8 @@ class Planisphere{
         this.render();
         this.rotateCurrentDate();
         this.skyPanel.transform({rotate:this.#lastRotation});
+
+        // window.addEventListener('resize', this.#resize.bind(this));
         this.#resize();
     }
     #resize(e){
@@ -131,12 +138,21 @@ class Planisphere{
         if(this.#dragging) return;
         this.#dragging = true;
         let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
-        this.#screenCenterX = rect.left + rect.width * 0.5;
-        this.#screenCenterY = rect.top + rect.height * 0.5;
+        this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
+        this.#screenCenterY = rect.top + rect.height * 0.5 + this.#panY;
         const pageX = e.touches ? e.touches[0].pageX : e.pageX;
         const pageY = e.touches ? e.touches[0].pageY : e.pageY;
-        this.#dragDownX = pageX - this.#screenCenterX;
-        this.#dragDownY = pageY - this.#screenCenterY;
+        
+        // Shift or ctrl 키 또는 두 손가락 터치면 이동 모드
+        if ((e.shiftKey || e.ctrlKey) || (e.touches && e.touches.length === 2)) {
+            this.#panning = true;
+            this.#panStartX = pageX;
+            this.#panStartY = pageY;
+        } else {
+            this.#panning = false;
+            this.#dragDownX = pageX - this.#screenCenterX;
+            this.#dragDownY = pageY - this.#screenCenterY;
+        }
         //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
     }
     #touchMove(e){
@@ -144,19 +160,41 @@ class Planisphere{
         if(!this.#dragging) return;
         const pageX = e.touches ? e.touches[0].pageX : e.pageX;
         const pageY = e.touches ? e.touches[0].pageY : e.pageY;
-        let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-        let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
-        let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
-        this.#currentRotation = this.#lastRotation + deltaR;
-        this.skyPanel.transform({
-            rotate:this.#currentRotation
-        });
+
+        if (this.#panning) {
+            // 이동 (pan)
+            this.#panX += pageX - this.#panStartX;
+            this.#panY += pageY - this.#panStartY;
+            this.#panStartX = pageX;
+            this.#panStartY = pageY;
+            this.#applyTransform();
+        } else {
+            // 회전
+            let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+            let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
+            let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+            this.#currentRotation = this.#lastRotation + deltaR;
+            this.#applyTransform();
+        }
     }
     #touchEnd(e){
-        //console.log("touchEnd");
         if(!this.#dragging) return;
-        this.#lastRotation = this.#currentRotation;
+        if (!this.#panning) this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
+        this.#panning = false;
+    }
+    #applyTransform() {
+        this.skyPanel.transform({
+            rotate: this.#currentRotation,
+            translate: [this.#panX, this.#panY]
+        });
+        this.topPanel.transform({
+            rotate: this.#topPanelRotation,
+            translate: [this.#panX, this.#panY]
+        });
+        this.infoPanel.transform({
+            translate: [this.#panX, this.#panY]
+        });
     }
 
     render(){
@@ -520,5 +558,6 @@ class Planisphere{
         let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90);
         this.topPanel.transform({rotate:rotation});
         this.#lastRotation = rotation;
+        this.#topPanelRotation = rotation;
     }
 }
