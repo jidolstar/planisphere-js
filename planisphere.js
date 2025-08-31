@@ -10,9 +10,7 @@ class Planisphere{
     #currentRotation = 0;
     #lastRotation = 0;
 
-
-    constructor(domId){
-        this.domId = domId;
+    constructor(wrapperDomId){
         this.limitDE = -70 * AstroMath.D2R
 
         //스타일 관련 
@@ -66,18 +64,26 @@ class Planisphere{
 
         this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
 
-        //부모 Dom
-        this.#parentDom = document.querySelector(this.domId);
-        this.#parentDom.innerHTML = '';
-        this.#parentDom.style = 'position:relative';
+        // wrapper 
+        const wrapper = document.querySelector(wrapperDomId);
+        wrapper.innerHTML = '';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100vh';
+        wrapper.style.background = 'linear-gradient(to bottom, '+ this.gradientBackgroundColor[0] + ', ' + this.gradientBackgroundColor[1] + ')'; 
 
-        //배경 
-        document.querySelector('body').style = `background-color:${this.gradientBackgroundColor[1]}`;
-        this.backgroundPanel = SVG().addTo(this.domId).viewbox(0, 0, this.width, this.height);
-        this.backgroundPanel.rect(this.width, this.height).fill(this.backgroundPanel.gradient('linear', (add)=>{
-            add.stop(0, this.gradientBackgroundColor[0]);
-            add.stop(1, this.gradientBackgroundColor[1]);
-        }).from(0, 0).to(0, 1));
+        // planisphere 영역 생성
+        const planisphereDiv = document.createElement('div');
+        planisphereDiv.style.position = 'absolute';
+        planisphereDiv.style.left = '50%';
+        planisphereDiv.style.top = '50%';
+        planisphereDiv.style.transform = 'translate(-50%, -50%)';
+        wrapper.appendChild(planisphereDiv);
+        
+        window.addEventListener('resize', this.#resize.bind(this));
+
+        //부모 Dom
+        this.#parentDom = planisphereDiv;
 
         //Sky
         this.skyPanel = SVG().addTo(this.#parentDom)
@@ -109,26 +115,38 @@ class Planisphere{
 
         this.render();
         this.rotateCurrentDate();
-
         this.skyPanel.transform({rotate:this.#lastRotation});
+        this.#resize();
+    }
+    #resize(e){
+        const wrapper = this.#parentDom.parentElement;
+        const w = wrapper.offsetWidth;
+        const h = wrapper.offsetHeight;
+        const size = Math.min(w, h);
+        this.#parentDom.style.width = size + 'px';
+        this.#parentDom.style.height = size + 'px';
     }
     #touchStart(e){
         //console.log("touchStart");
         if(this.#dragging) return;
         this.#dragging = true;
         let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
-        this.#screenCenterX = rect.width * 0.5;
-        this.#screenCenterY = rect.width * 0.5; 
-        this.#dragDownX =(e.pageX || e.touches[0].pageX) - this.#screenCenterX;
-        this.#dragDownY =(e.pageY || e.touches[0].pageY) - this.#screenCenterY;
+        this.#screenCenterX = rect.left + rect.width * 0.5;
+        this.#screenCenterY = rect.top + rect.height * 0.5;
+        const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+        const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+        this.#dragDownX = pageX - this.#screenCenterX;
+        this.#dragDownY = pageY - this.#screenCenterY;
         //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
     }
     #touchMove(e){
         //console.log("touchMove");
         if(!this.#dragging) return;
+        const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+        const pageY = e.touches ? e.touches[0].pageY : e.pageY;
         let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-        let r2 = Math.atan2((e.pageY || e.touches[0].pageY) - this.#screenCenterY, (e.pageX || e.touches[0].pageX) - this.#screenCenterX);
-        let deltaR = AstroMath.mod(r2- r1, AstroMath.TPI) * AstroMath.R2D;
+        let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
+        let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
         this.#currentRotation = this.#lastRotation + deltaR;
         this.skyPanel.transform({
             rotate:this.#currentRotation
