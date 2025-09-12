@@ -33,7 +33,7 @@ class Planisphere{
         this.dateCircleBgColor = '#3d44aa';	//날짜 환원 배경색
         this.dateColor = '#fff';	//날짜글자 표시색
         this.dateMonthTextSize = 11;
-        this.dateDayTextSize = 9;
+        this.dateDayTextSize = 10;
         this.conNameTextColor = '#AACC00'; //별자리이름 글자색 
         this.conNameTextSize = 10; //별자리이름 글자크기
         this.conlineColor = '#f06'; //별자리선 색 
@@ -63,7 +63,7 @@ class Planisphere{
 
         this.currentDate = new Date();
         this.astroTime = new AstroTime(9, 127, 38);
-        this.deltaCulminationTime = 0;//this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용 		
+        this.deltaCulminationTime = this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용
         this.lct = AstroTime.jd(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, this.currentDate.getDate(), this.currentDate.getHours(), this.currentDate.getMinutes(), this.currentDate.getSeconds());
         this.ut = this.astroTime.LCT2UT(this.lct);
         this.gst = AstroTime.UT2GST(this.ut);
@@ -226,25 +226,26 @@ class Planisphere{
         let path = ''; 
 
         //날짜 눈금부분 
-        canvas.circle(diameter + 65).center(cx, cy).stroke({ width: 6, color:'#000'}); //최외곽 
-        canvas.circle(diameter + 65).center(cx, cy).fill(this.dateCircleBgColor); //날짜선 배경 
+        canvas.circle(diameter + 85).center(cx, cy).stroke({ width: 6, color:'#000'}); //최외곽 
+        canvas.circle(diameter + 85).center(cx, cy).fill(this.dateCircleBgColor); //날짜선 배경 
         canvas.circle(diameter).center(cx, cy).stroke({width: 3, color:'#000'}); //날짜선 안쪽 선 
         canvas.circle(diameter).center(cx, cy).fill(this.bgColor); //별자리 영역 
-        canvas.circle(diameter + 35).center(cx, cy).fill('none').stroke({width: 1, color:this.dateColor}); //날짜/월 경계선 
+        canvas.circle(diameter + 45).center(cx, cy).fill('none').stroke({width: 1, color:this.dateColor}); //날짜/월 경계선 
 
         //날짜 월 표시 
-        let hour = 0;
+        let year = this.currentDate.getFullYear()
+        let hour = 12;
         let minute = 0;
         let second = 0;
         for(let month = 1; month <= 12; month++){
-            const lct = AstroTime.jd(this.currentDate.getFullYear(), month, 16, hour, minute, second);
+            const midDay= AstroTime.monthMidDay(year, month);  // 윤년 포함, 월별 정확한 중간일
+            const hour = this.astroTime.localApparentNoonHour(year, month, midDay);
+            const lct = AstroTime.jd(year, month, midDay, hour, 0, 0);
 			const lst = this.astroTime.LCT2LST(lct);
-			this.equVector.setSphe(AstroTime.jd2Time(lst)*AstroMath.H2R + this.deltaCulminationTime, this.limitDE); 
-			const ra = this.equVector.lon();	//적경
-			const dec = this.equVector.lat(); //적위 
-			let {x, y} = this.proj.project(ra, dec);	//화면에 투영한 값 받음
+            const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
+            let {x, y} = this.proj.project(ra, this.limitDE);
             let t = Math.atan2(y,x);
-            let r = this.radius+28;
+            let r = this.radius+38;
             x = r * Math.cos(t);
             y = r * Math.sin(t);
             canvas.text(`${month}월`).move(cx + x - 12, cy + y - 13)
@@ -256,17 +257,16 @@ class Planisphere{
         //날짜 월 경계선 표시 
         path = '';
         for(let month = 1; month <= 12; month++){
-            const lct = AstroTime.jd(this.currentDate.getFullYear(), month, 1, hour, minute, second);
+            const hour = this.astroTime.localApparentNoonHour(year, month, 1);
+            const lct = AstroTime.jd(year, month, 1, hour, 0, 0);
 			const lst = this.astroTime.LCT2LST(lct);
-			this.equVector.setSphe(AstroTime.jd2Time(lst)*AstroMath.H2R + this.deltaCulminationTime, this.limitDE); 
-			const ra = this.equVector.lon();	//적경
-			const dec = this.equVector.lat(); //적위 
-			const {x, y} = this.proj.project(ra, dec);	//화면에 투영한 값 받음
+            const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
+            const {x, y} = this.proj.project(ra, this.limitDE);
             const t = Math.atan2(y,x);
             const r1 = this.radius+17;
             const x1 = r1 * Math.cos(t);
             const y1 = r1 * Math.sin(t);
-            const r2 = this.radius+32;
+            const r2 = this.radius+42;
             const x2 = r2 * Math.cos(t);
             const y2 = r2 * Math.sin(t);
             path += `M${cx + x1} ${cy + y1} L${cx + x2} ${cy + y2} `;
@@ -281,40 +281,35 @@ class Planisphere{
 
         //날짜 일 경계선 표시 
         path = '';
-        var arrMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+        const daysPerMonth = AstroTime.monthDayCounts(year);
         for(let month = 1; month <= 12; month++){
-            let dayOfMonth = 0;
-            while(arrMonth[month-1] >= ++dayOfMonth){
-                const lct = AstroTime.jd(this.currentDate.getFullYear(), month, dayOfMonth, hour, minute, second);
+            const days = daysPerMonth[month - 1];
+            for (let dayOfMonth = 1; dayOfMonth <= days; dayOfMonth++) {
+                const hour = this.astroTime.localApparentNoonHour(year, month, dayOfMonth);
+                const lct = AstroTime.jd(this.currentDate.getFullYear(), month, dayOfMonth, hour, 0, 0);
                 const lst = this.astroTime.LCT2LST(lct);
-                this.equVector.setSphe(AstroTime.jd2Time(lst)*AstroMath.H2R + this.deltaCulminationTime, this.limitDE); 
-                const ra = this.equVector.lon();	//적경
-                const dec = this.equVector.lat(); //적위 
-                const {x, y} = this.proj.project(ra, dec);	//화면에 투영한 값 받음
+                const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
+                const {x, y} = this.proj.project(ra, this.limitDE);
                 const t = Math.atan2(y,x);
-                const r1 = this.radius + 3;
+                const r1 = this.radius + 2;
                 const x1 = r1 * Math.cos(t);
                 const y1 = r1 * Math.sin(t);
-                let r2 = r1 + 15;  //1일 일때는 길게 라인을 그린다. 
-               
-                if(dayOfMonth != 1){
-                    if(dayOfMonth % 10 == 0){
-                        const x2 = (r1 + 6) * Math.cos(t - 0.4 * AstroMath.D2R);
-                        const y2 = (r1 + 6) * Math.sin(t - 0.4 * AstroMath.D2R);
-                        //canvas.line(0, 0, cx+x2, cy+y2).stroke({width:1,color:'#f00'});
-                        canvas.text(`${dayOfMonth}`).move(cx + x2 - 7, cy + y2  - 3.5)
-                        .transform({
-                            origin:[cx+x2, cy+y2],
-                            rotate:AstroMath.R2D * (Math.atan2(y2, x2)-AstroMath.HPI)
-                        })
-                        .font({fill:this.dateColor, size:this.dateDayTextSize,
-                            family:'Inconsolata',opacity:0.8});
+                let r2 = r1 + 2;
+                if (dayOfMonth !== 1) {
+                    if (dayOfMonth % 10 === 0) {
+                        const x2txt = (r1 + 9) * Math.cos(t - 0.4 * AstroMath.D2R);
+                        const y2txt = (r1 + 9) * Math.sin(t - 0.4 * AstroMath.D2R);
+                        canvas.text(`${dayOfMonth}`)
+                        .move(cx + x2txt - 7, cy + y2txt - 3.5)
+                        .transform({ origin:[cx + x2txt, cy + y2txt],
+                                    rotate: AstroMath.R2D * (Math.atan2(y2txt, x2txt) - AstroMath.HPI) })
+                        .font({ fill: this.dateColor, size: this.dateDayTextSize, family: 'Inconsolata', opacity: 0.8 });
+                        r2 = r1 + 6;
+                    } else if (dayOfMonth % 5 === 0) {
+                        r2 = r1 + 5;
                     }
-                    if(dayOfMonth%5 == 0){
-                        r2 = r1 + 4; 
-                    }else{ 
-                        r2 = r1 + 1;
-                    }
+                } else {
+                    r2 = r1 + 15; // 매월 1일은 긴 틱
                 }
                 const x2 = r2 * Math.cos(t);
                 const y2 = r2 * Math.sin(t);
@@ -418,7 +413,7 @@ class Planisphere{
             const name = dataConNameList[i+2];
             const {x, y} = this.proj.project(dataConNameList[i], dataConNameList[i+1]);
             //console.log(`${name} ${x} ${y}`)
-            if(Math.sqrt(x*x+y*y) < this.proj.screenRadius){
+            if(Math.sqrt(x*x+y*y) < this.proj.screenRadius - 30){
                 canvas.text(name).move(cx + x, cy + y)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
                 .font({fill:this.conNameTextColor,size:this.conNameTextSize,family:'Inconsolata',opacity:0.8});

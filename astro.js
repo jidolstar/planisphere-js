@@ -51,6 +51,37 @@ class AstroTime{
         this.glon = lon * AstroMath.D2R; //지방 경도. 라디안 값으로 변환 
         this.glat = lat * AstroMath.D2R; //지방 위도. 라디안 값으로 변환 
     }
+    // 그레고리력 윤년 판단
+    static isLeapYear(year) {
+        return (year % 400 === 0) || (year % 4 === 0 && year % 100 !== 0);
+    }
+    // 월별 일수 배열 반환 (윤년 반영)
+    static monthDayCounts(year) {
+        return [
+            31,
+            AstroTime.isLeapYear(year) ? 29 : 28,
+            31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+        ];
+    }
+    // 각 월의 '중간일'(라벨 배치용) 반환: ceil(일수/2)
+    static monthMidDay(year, month) {
+        const days = AstroTime.monthDayCounts(year)[month - 1];
+        return Math.ceil(days / 2);
+    }
+    //진정오(Local Apparent Solar Noon)의 "표준시(LCT) 시각"을 시간 단위로 반환
+    //    dstHours: 일광절약시간(+1 등), 기본 0
+    localApparentNoonHour(year, month, day, dstHours = 0) {
+        // 경도(시간) = 경도(라디안) * R2H
+        const lonHours = this.glon * AstroMath.R2H;   // 예: 127E → 8.466..h
+        const zoneHours = this.dgmt;                  // 예: KST → 9h
+        const eotHours = AstroTime.equationOfTimeMinutes(year, month, day) / 60.0;
+        const meanNoonOffset = zoneHours - lonHours;  // 표준자오선-경도 보정(시간)
+        // LASN(LCT) = 12 + (표준시-경도 보정) - EoT + DST
+        let hour = 12 + meanNoonOffset - eotHours + dstHours;
+        // 0~24 정규화
+        hour = AstroMath.normalize(hour, 0, 24);
+        return hour;
+    }
     //Julian Day Number 
     //비교 : https://planetcalc.com/503/ 
     static jd(year, month, day, hour, minute, second){
@@ -74,6 +105,20 @@ class AstroTime{
     static jd2Time(jd){
         return (jd - this.jd2Date(jd)) * 24.0;
     }
+    // 연-월-일 → 년중 일수(DOY)
+    static dayOfYear(year, month, day) {
+        const d0 = new Date(year, 0, 1);
+        const d1 = new Date(year, month - 1, day);
+        return Math.floor((d1 - d0) / 86400000) + 1;
+    }
+
+    // 시각방정식 EoT (분) – 근사식(교육용으로 충분, ±1~2분)
+    static equationOfTimeMinutes(year, month, day) {
+        const N = AstroTime.dayOfYear(year, month, day);
+        const B = 2 * Math.PI * (N - 81) / 365.0;
+        return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+    }
+
     //Universial time -> Greenwich sidereal time
     static UT2GST(ut){
         let ut_date = this.jd2Date(ut);
