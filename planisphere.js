@@ -17,8 +17,21 @@ class Planisphere{
     #panX = 0;
     #panY = 0;
 
-    constructor(wrapperDomId){
+    constructor({
+        wrapperDomId,
+        currentDate = new Date(),
+        lon = 126.98,
+        lat = 37.57,
+        dgmt = 9,
+        styles = {}
+    }){
+        if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
         this.limitDE = -70 * AstroMath.D2R
+        //this.limitDE = -(90 - Math.abs(lat) + 5) * AstroMath.D2R;
+        lon = ((lon + 180) % 360 + 360) % 360 - 180;
+
+        if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
+        if (Math.abs(lat) < 20) throw new Error("적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
         this.gradientBackgroundColor = ['#777794', '#adb2ce'];
@@ -61,8 +74,8 @@ class Planisphere{
         this.equVector = new AstroVector();	//적도좌표값
         this.horToEquMatrix = new AstroMatrix(0,0,0,0,0,0,0,0,0); //지평좌표->적도좌표 로 바꿔주는 행렬
 
-        this.currentDate = new Date();
-        this.astroTime = new AstroTime(9, 127, 38);
+        this.currentDate = currentDate;
+        this.astroTime = new AstroTime(dgmt, lon, lat);
         this.deltaCulminationTime = this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용
         this.lct = AstroTime.jd(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, this.currentDate.getDate(), this.currentDate.getHours(), this.currentDate.getMinutes(), this.currentDate.getSeconds());
         this.ut = this.astroTime.LCT2UT(this.lct);
@@ -125,7 +138,7 @@ class Planisphere{
     rotateCurrentDate(){
         //Local Sidereal Time 만큼 회전시켜준다.
         //즉, 남중해야할 별이 화면 아래로 향하게 한다.
-        let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90);
+        let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
         this.#lastRotation = rotation;
         this.#currentRotation = rotation;
         this.#topPanelRotation = rotation;
@@ -144,13 +157,17 @@ class Planisphere{
             translate: [this.#panX, this.#panY]
         });
     }
-    #resize(e){
+    #resize(e) {
         const wrapper = this.#parentDom.parentElement;
         const w = wrapper.offsetWidth;
         const h = wrapper.offsetHeight;
         const size = Math.min(w, h);
-        this.#parentDom.style.width = size + 'px';
-        this.#parentDom.style.height = size + 'px';
+
+        // 브라우저 확대/축소 비율 반영
+        const scale = window.devicePixelRatio || 1;
+
+        this.#parentDom.style.width = (size * scale) + 'px';
+        this.#parentDom.style.height = (size * scale) + 'px';
     }
     #touchStart(e){
         //console.log("touchStart");
@@ -219,10 +236,14 @@ class Planisphere{
     }
 
     renderSkyPanel(){
-        let canvas = this.skyPanel;
-        let diameter = this.radius * 2;
-        let cx = 0; //this.centerX;
-        let cy = 0; //this.centerY;
+        const canvas = this.skyPanel;
+        const diameter = this.radius * 2;
+        const cx = 0; //this.centerX;
+        const cy = 0; //this.centerY;
+        const year = this.currentDate.getFullYear()
+        const daysInYear = this.astroTime.daysInYear(year);
+        const dailyStep = AstroMath.TPI / daysInYear;
+        //const dailyStep = 0.0;
         let path = ''; 
 
         //날짜 눈금부분 
@@ -233,17 +254,13 @@ class Planisphere{
         canvas.circle(diameter + 45).center(cx, cy).fill('none').stroke({width: 1, color:this.dateColor}); //날짜/월 경계선 
 
         //날짜 월 표시 
-        let year = this.currentDate.getFullYear()
-        let hour = 12;
-        let minute = 0;
-        let second = 0;
         for(let month = 1; month <= 12; month++){
             const midDay= AstroTime.monthMidDay(year, month);  // 윤년 포함, 월별 정확한 중간일
-            const hour = this.astroTime.localApparentNoonHour(year, month, midDay);
+            const hour = this.astroTime.hourForDateRing(year, month, midDay);
             const lct = AstroTime.jd(year, month, midDay, hour, 0, 0);
 			const lst = this.astroTime.LCT2LST(lct);
             const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-            let {x, y} = this.proj.project(ra, this.limitDE);
+            let {x, y} = this.proj.project(ra + dailyStep / 2, this.limitDE);
             let t = Math.atan2(y,x);
             let r = this.radius+38;
             x = r * Math.cos(t);
@@ -257,11 +274,11 @@ class Planisphere{
         //날짜 월 경계선 표시 
         path = '';
         for(let month = 1; month <= 12; month++){
-            const hour = this.astroTime.localApparentNoonHour(year, month, 1);
+            const hour = this.astroTime.hourForDateRing(year, month, 1);
             const lct = AstroTime.jd(year, month, 1, hour, 0, 0);
 			const lst = this.astroTime.LCT2LST(lct);
             const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-            const {x, y} = this.proj.project(ra, this.limitDE);
+            const {x, y} = this.proj.project(ra + dailyStep / 2, this.limitDE);
             const t = Math.atan2(y,x);
             const r1 = this.radius+17;
             const x1 = r1 * Math.cos(t);
@@ -285,11 +302,11 @@ class Planisphere{
         for(let month = 1; month <= 12; month++){
             const days = daysPerMonth[month - 1];
             for (let dayOfMonth = 1; dayOfMonth <= days; dayOfMonth++) {
-                const hour = this.astroTime.localApparentNoonHour(year, month, dayOfMonth);
+                const hour = this.astroTime.hourForDateRing(year, month, dayOfMonth);
                 const lct = AstroTime.jd(this.currentDate.getFullYear(), month, dayOfMonth, hour, 0, 0);
                 const lst = this.astroTime.LCT2LST(lct);
                 const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-                const {x, y} = this.proj.project(ra, this.limitDE);
+                const {x, y} = this.proj.project(ra + dailyStep / 2, this.limitDE);
                 const t = Math.atan2(y,x);
                 const r1 = this.radius + 2;
                 const x1 = r1 * Math.cos(t);
@@ -484,7 +501,7 @@ class Planisphere{
         this.equVector.multiply(this.horToEquMatrix, this.horVector);
         path = '';
         for(let hour = 1; hour <= 24; hour++){
-            const t = -(-this.equVector.lon() - this.deltaCulminationTime + hour*AstroMath.H2R + AstroMath.PI);
+            const t = -(-this.equVector.lon() - this.deltaCulminationTime + hour * AstroMath.H2R + AstroMath.PI);
             const cos_lon = Math.cos(t);
             const sin_lon =  Math.sin(t);
             const x1 = this.radius * cos_lon;

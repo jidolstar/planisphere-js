@@ -68,20 +68,7 @@ class AstroTime{
         const days = AstroTime.monthDayCounts(year)[month - 1];
         return Math.ceil(days / 2);
     }
-    //진정오(Local Apparent Solar Noon)의 "표준시(LCT) 시각"을 시간 단위로 반환
-    //    dstHours: 일광절약시간(+1 등), 기본 0
-    localApparentNoonHour(year, month, day, dstHours = 0) {
-        // 경도(시간) = 경도(라디안) * R2H
-        const lonHours = this.glon * AstroMath.R2H;   // 예: 127E → 8.466..h
-        const zoneHours = this.dgmt;                  // 예: KST → 9h
-        const eotHours = AstroTime.equationOfTimeMinutes(year, month, day) / 60.0;
-        const meanNoonOffset = zoneHours - lonHours;  // 표준자오선-경도 보정(시간)
-        // LASN(LCT) = 12 + (표준시-경도 보정) - EoT + DST
-        let hour = 12 + meanNoonOffset - eotHours + dstHours;
-        // 0~24 정규화
-        hour = AstroMath.normalize(hour, 0, 24);
-        return hour;
-    }
+    
     //Julian Day Number 
     //비교 : https://planetcalc.com/503/ 
     static jd(year, month, day, hour, minute, second){
@@ -212,7 +199,46 @@ class AstroTime{
         let ut = this.LCT2UT(lct);
         return this.UT2LST(ut);
     }
-
+    daysInYear(year) {
+        return (AstroTime.isLeapYear(year)) ? 366 : 365;
+    }
+    //진정오(Local Apparent Solar Noon)의 "표준시(LCT) 시각"을 시간 단위로 반환
+    //    dstHours: 일광절약시간(+1 등), 기본 0
+    lasn(year, month, day, dstHours = 0) {
+        // 경도(시간) = 경도(라디안) * R2H
+        const lonHours = this.glon * AstroMath.R2H;   // 예: 127E → 8.466..h
+        const zoneHours = this.dgmt;                  // 예: KST → 9h
+        const eotHours = AstroTime.equationOfTimeMinutes(year, month, day) / 60.0;
+        const meanNoonOffset = zoneHours - lonHours;  // 표준자오선-경도 보정(시간)
+        // LASN(LCT) = 12 + (표준시-경도 보정) - EoT + DST
+        let hour = 12 + meanNoonOffset - eotHours + dstHours;
+        // 0~24 정규화
+        hour = AstroMath.normalize(hour, 0, 24);
+        return hour;
+    }
+    lamn(year, month, day, dstHours=0) {
+        // LASN은 12h 기준이므로, LAMN은 LASN - 12h로 정의 가능
+        return AstroMath.normalize(
+            this.lasn(year, month, day, dstHours) - 12,
+            0, 24
+        );
+    }
+    hourForDateRing(year, month, day, mode = 'LASN', dstHours = 0) {
+        switch (mode) {
+            case 'MIDNIGHT':    // 표준시 자정 기준(0h) → 시간환 0시와 정확히 정렬됨
+                return AstroMath.normalize(0 + dstHours, 0, 24);
+            case 'LOCAL_NOON':  // 단순 정오(12h)
+                return AstroMath.normalize(12 + dstHours, 0, 24);
+            case 'LASN':        // 진정오(Local Apparent Solar Noon)
+                return this.lasn(year, month, day, dstHours);
+            case 'LAMN':        // 진정자정(Local Apparent Midnight)
+                return this.lamn(year, month, day, dstHours);
+            case 'LOCAL_21H':   // 교육용(밤 9시) 프리셋
+                return AstroMath.normalize(21 + dstHours, 0, 24);
+            default:
+                return AstroMath.normalize(0 + dstHours, 0, 24);
+        }
+    }    
 };
 
 class AstroVector{

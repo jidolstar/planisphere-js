@@ -38,7 +38,14 @@ svg text{
 <body>
 <div id="planisphere"></div>
 <script>
-    const planisphere = new Planisphere('#planisphere');
+    const planisphere = new Planisphere({
+        wrapperDomId: '#planisphere',
+        currentDate: new Date(),
+        lon: 126.98,
+        lat: 37.57,
+        dgmt: 9,
+        styles: {}
+    });
 </script>
 </body>
 </html>
