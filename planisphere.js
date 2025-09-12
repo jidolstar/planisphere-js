@@ -1,6 +1,6 @@
 ;
 class Planisphere{
-    static defaultStyles = {
+    static #defaultStyles = {
         gradientBackgroundColor: ['#777794', '#adb2ce'],
         bgColor: '#000',             // Panel 기본색
         raLineColor: '#aaa',         // 적경 라인 색
@@ -31,6 +31,9 @@ class Planisphere{
         nwesColor: '#000',           // 동서남북 글자색
         nwesTextSize: 12
     };
+    static isMobile() {
+       return /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent);
+    }
 
     #parentDom;
 
@@ -67,7 +70,7 @@ class Planisphere{
         if (Math.abs(lat) < 20) throw new Error("적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
-        Object.assign(this, Planisphere.defaultStyles, styles);
+        Object.assign(this, Planisphere.#defaultStyles, styles);
 
         //좌표 관련 
         this.width = 1000;
@@ -130,17 +133,24 @@ class Planisphere{
             .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
-        //마우스로 회전 
-        this.#parentDom.addEventListener('mousedown', this.#touchStart.bind(this));
-        this.#parentDom.addEventListener('mousemove', this.#touchMove.bind(this));
-        this.#parentDom.addEventListener('mouseup', this.#touchEnd.bind(this));
-        this.#parentDom.addEventListener('mouseout', this.#touchEnd.bind(this));
-        this.#parentDom.addEventListener('touchstart', this.#touchStart.bind(this), true);
-        this.#parentDom.addEventListener('touchmove', this.#touchMove.bind(this), true);
-        this.#parentDom.addEventListener('touchend', this.#touchEnd.bind(this), true);
-        this.#parentDom.addEventListener('touchcancel', this.#touchEnd.bind(this), true);
+        // 기존 addEventListener 블록 교체
+        if (Planisphere.isMobile()) {
+            // 모바일 → 터치 전용
+            this.#parentDom.addEventListener('touchstart', this.#touchStartMobile.bind(this), { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchmove',  this.#touchMoveMobile.bind(this),  { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchend',   this.#touchEndMobile.bind(this),   { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchcancel',this.#touchEndMobile.bind(this),   { capture: true, passive: false });
+        } else {
+            // PC → 마우스 전용
+            this.#parentDom.addEventListener('mousedown', this.#mouseDown.bind(this));
+            this.#parentDom.addEventListener('mousemove', this.#mouseMove.bind(this));
+            this.#parentDom.addEventListener('mouseup',   this.#mouseUp.bind(this));
+            this.#parentDom.addEventListener('mouseleave',this.#mouseUp.bind(this));
+            // 우클릭 드래그 pan 지원 시 컨텍스트 메뉴 방지(선택)
+            this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
+        }
 
-        this.render();
+        this.#render();
         this.rotateCurrentDate();
         this.#resize();
     }
@@ -178,60 +188,156 @@ class Planisphere{
         this.#parentDom.style.width = (size * scale) + 'px';
         this.#parentDom.style.height = (size * scale) + 'px';
     }
-    #touchStart(e){
-        //console.log("touchStart");
-        if(this.#dragging) return;
+    #mouseDown(e) {
         this.#dragging = true;
-        let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
+        const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
-        this.#screenCenterY = rect.top + rect.height * 0.5 + this.#panY;
-        const pageX = e.touches ? e.touches[0].pageX : e.pageX;
-        const pageY = e.touches ? e.touches[0].pageY : e.pageY;
-        
-        if ((e.shiftKey || e.ctrlKey) || (e.touches && e.touches.length === 2)) {
-            this.#panning = true;
-            this.#panStartX = pageX;
-            this.#panStartY = pageY;
-            this.#currentRotation = this.#lastRotation;
-        } else {
-            this.#panning = false;
-            this.#dragDownX = pageX - this.#screenCenterX;
-            this.#dragDownY = pageY - this.#screenCenterY;
-        }
-        //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
-    }
-    #touchMove(e){
-        //console.log("touchMove");
-        if(!this.#dragging) return;
-        const pageX = e.touches ? e.touches[0].pageX : e.pageX;
-        const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+        this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
+
+        // 좌클릭=회전, Shift/Ctrl/우클릭/중클릭=pan
+        const isPan = e.shiftKey || e.ctrlKey || e.button === 1 || e.button === 2;
+        this.#panning = isPan;
 
         if (this.#panning) {
-            // 이동 (pan)
-            this.#panX += pageX - this.#panStartX;
-            this.#panY += pageY - this.#panStartY;
-            this.#panStartX = pageX;
-            this.#panStartY = pageY;
+            this.#panStartX = e.pageX;
+            this.#panStartY = e.pageY;
+            this.#currentRotation = this.#lastRotation; // 회전 고정
+        } else {
+            this.#dragDownX = e.pageX - this.#screenCenterX;
+            this.#dragDownY = e.pageY - this.#screenCenterY;
+        }
+    }
+    #mouseMove(e) {
+        if (!this.#dragging) return;
+        if (this.#panning) {
+            // 이동(pan)
+            this.#panX += e.pageX - this.#panStartX;
+            this.#panY += e.pageY - this.#panStartY;
+            this.#panStartX = e.pageX;
+            this.#panStartY = e.pageY;
         } else {
             // 회전
-            let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-            let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
-            let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+            const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+            const r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
+            const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
             this.#currentRotation = this.#lastRotation + deltaR;
         }
         this.#applyTransform();
     }
-    #touchEnd(e){
-        if(!this.#dragging) return;
-        if(!this.#panning) this.#lastRotation = this.#currentRotation;
+
+    #mouseUp(e) {
+        if (!this.#dragging) return;
+        if (!this.#panning) this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
-        this.#panning = false;
+        this.#panning  = false;
+    }
+    #touchStartMobile(e) {
+        e.preventDefault(); // 스크롤/바운스 방지
+        if (this.#dragging) return;
+        this.#dragging = true;
+
+        const rect = this.#parentDom.getBoundingClientRect();
+        this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
+        this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
+
+        if (e.touches.length === 1) {
+            // 1손가락=회전
+            this.#panning = false;
+            const t = e.touches[0];
+            this.#dragDownX = t.pageX - this.#screenCenterX;
+            this.#dragDownY = t.pageY - this.#screenCenterY;
+        } else if (e.touches.length >= 2) {
+            // 2손가락=이동
+            this.#panning = true;
+            const t = e.touches[0];
+            this.#panStartX = t.pageX;
+            this.#panStartY = t.pageY;
+            this.#currentRotation = this.#lastRotation; // 회전 고정
+        }
+    }
+    #touchMoveMobile(e) {
+        e.preventDefault();
+        if (!this.#dragging) return;
+
+        if (this.#panning && e.touches.length >= 1) {
+            // 이동(pan)
+            const t = e.touches[0];
+            this.#panX += t.pageX - this.#panStartX;
+            this.#panY += t.pageY - this.#panStartY;
+            this.#panStartX = t.pageX;
+            this.#panStartY = t.pageY;
+        } else if (!this.#panning && e.touches.length === 1) {
+            // 회전
+            const t = e.touches[0];
+            const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+            const r2 = Math.atan2(t.pageY - this.#screenCenterY, t.pageX - this.#screenCenterX);
+            const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+            this.#currentRotation = this.#lastRotation + deltaR;
+        }
+        this.#applyTransform();
+    }
+    #touchEndMobile(e) {
+        e.preventDefault();
+        if (!this.#dragging) return;
+        if (!this.#panning) this.#lastRotation = this.#currentRotation;
+        this.#dragging = false;
+        this.#panning  = false;
     }
 
-    render(){
-        this.renderSkyPanel();
-        this.renderTopPanel();
-        this.renderInfoPanel();
+    
+    // #touchStart(e){
+    //     //console.log("touchStart");
+    //     if(this.#dragging) return;
+    //     this.#dragging = true;
+    //     let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
+    //     this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
+    //     this.#screenCenterY = rect.top + rect.height * 0.5 + this.#panY;
+    //     const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+    //     const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+        
+    //     if ((e.shiftKey || e.ctrlKey) || (e.touches && e.touches.length === 2)) {
+    //         this.#panning = true;
+    //         this.#panStartX = pageX;
+    //         this.#panStartY = pageY;
+    //         this.#currentRotation = this.#lastRotation;
+    //     } else {
+    //         this.#panning = false;
+    //         this.#dragDownX = pageX - this.#screenCenterX;
+    //         this.#dragDownY = pageY - this.#screenCenterY;
+    //     }
+    //     //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
+    // }
+    // #touchMove(e){
+    //     //console.log("touchMove");
+    //     if(!this.#dragging) return;
+    //     const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+    //     const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+
+    //     if (this.#panning) {
+    //         // 이동 (pan)
+    //         this.#panX += pageX - this.#panStartX;
+    //         this.#panY += pageY - this.#panStartY;
+    //         this.#panStartX = pageX;
+    //         this.#panStartY = pageY;
+    //     } else {
+    //         // 회전
+    //         let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+    //         let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
+    //         let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+    //         this.#currentRotation = this.#lastRotation + deltaR;
+    //     }
+    //     this.#applyTransform();
+    // }
+    // #touchEnd(e){
+    //     if(!this.#dragging) return;
+    //     if(!this.#panning) this.#lastRotation = this.#currentRotation;
+    //     this.#dragging = false;
+    //     this.#panning = false;
+    // }
+    #render(){
+        this.#renderSkyPanel();
+        this.#renderTopPanel();
+        this.#renderInfoPanel();
 
         /*
         console.log(conname.root.data.conname[0]);
@@ -243,8 +349,7 @@ class Planisphere{
         console.log("AstroTime.jd(2022,08,26,22,35,0) = ", AstroTime.jd(2022,08,26,22,35,0));
         */
     }
-
-    renderSkyPanel(){
+    #renderSkyPanel(){
         const canvas = this.skyPanel;
         const diameter = this.radius * 2;
         const cx = 0; //this.centerX;
@@ -446,8 +551,7 @@ class Planisphere{
             }
         }
     }
-
-    renderTopPanel(){
+    #renderTopPanel(){
         let canvas = this.topPanel;
         let diameter = this.radius * 2;
         let cx = 0; //this.centerX;
@@ -548,8 +652,7 @@ class Planisphere{
         }
         canvas.path(path).fill('none').stroke({width: 1, color:this.timeLineColor});  
     }
-
-    renderInfoPanel(){
+    #renderInfoPanel(){
         let canvas = this.infoPanel;
         let cx = 0;//this.centerX;
         let cy = 0;//this.centerY;
