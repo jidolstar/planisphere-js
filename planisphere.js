@@ -1,4 +1,37 @@
+;
 class Planisphere{
+    static defaultStyles = {
+        gradientBackgroundColor: ['#777794', '#adb2ce'],
+        bgColor: '#000',             // Panel 기본색
+        raLineColor: '#aaa',         // 적경 라인 색
+        decLineColor1: '#aaa',       // 적위 라인 색
+        decLineColor2: '#facc99',    // 적위 적도 라인 색
+        EquatorLineColor: '#aa9944', // 적도 선 라인
+        eclipticLineColor: '#9955aa',// 황도 선 라인
+        raTextColor: '#fff',         // 적경 글자 색
+        raTextSize: 10,              // 적경 글자 크기
+
+        dateCircleBgColor: '#3d44aa',// 날짜환 배경색
+        dateColor: '#fff',           // 날짜 글자 표시색
+        dateMonthTextSize: 11,
+        dateDayTextSize: 10,
+
+        conNameTextColor: '#AACC00', // 별자리 이름 글자색
+        conNameTextSize: 10,         // 별자리 이름 글자크기
+        conlineColor: '#f06',        // 별자리선 색
+        conlineOpacity: 0.7,         // 별자리선 투명도
+
+        topPanelBgColor: '#ffaa00',  // 상단패널 배경색
+        timeLineColor: '#000',       // 시간 눈금 색
+        timeTextColor: '#000',       // 시간 텍스트 색
+        timeTextSize: 11,
+
+        legendColor: '#000',         // 범례 색
+        legendTextSize: 11,
+        nwesColor: '#000',           // 동서남북 글자색
+        nwesTextSize: 12
+    };
+
     #parentDom;
 
     //마우스로 별자리판 회전하기 위해 사용하는 속성 
@@ -34,31 +67,7 @@ class Planisphere{
         if (Math.abs(lat) < 20) throw new Error("적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
-        this.gradientBackgroundColor = ['#777794', '#adb2ce'];
-        this.bgColor = '#000';		//Panel 기본색
-        this.raLineColor = '#aaa';	//적경 라인 색
-        this.decLineColor1 = '#aaa';	//적위 라인 색
-        this.decLineColor2 = '#facc99'; //적위 적도 라인 색 
-        this.EquatorLineColor = '#aa9944';	//적도 선 라인 
-        this.eclipticLineColor = '#9955aa';	//황도 선 라인 	
-        this.raTextColor = '#fff'; //적경 글자 색 
-        this.raTextSize = 10; //적경 글자 크기 
-        this.dateCircleBgColor = '#3d44aa';	//날짜 환원 배경색
-        this.dateColor = '#fff';	//날짜글자 표시색
-        this.dateMonthTextSize = 11;
-        this.dateDayTextSize = 10;
-        this.conNameTextColor = '#AACC00'; //별자리이름 글자색 
-        this.conNameTextSize = 10; //별자리이름 글자크기
-        this.conlineColor = '#f06'; //별자리선 색 
-        this.conlineOpacity = 0.7; 
-        this.topPanelBgColor = '#ffaa00'; //상단패널 배경색 
-        this.timeLineColor = '#000'; //시간눈금 색  
-        this.timeTextColor = '#000'; //시간 텍스트 색 
-        this.timeTextSize = 11;
-        this.legendColor = '#000'; //범례 색 
-        this.legendTextSize = 11;
-        this.nwesColor = '#000'; //동서남북 글자색 
-        this.nwesTextSize = 12; 
+        Object.assign(this, Planisphere.defaultStyles, styles);
 
         //좌표 관련 
         this.width = 1000;
@@ -548,7 +557,6 @@ class Planisphere{
         //별 등성 범례
         let radius = 0.5;
         let alpha = 0.5;
-        let color = '#fff';
         for(let mag = -1; mag < 5; mag++){
             if(mag < -1){radius = 7; alpha = 1}
             else if(mag < 0){radius = 6; alpha = 1}
@@ -561,10 +569,10 @@ class Planisphere{
             canvas.circle(radius*2)
                 .center(cx-280 - radius/2, cy - 170 + mag * 15)
                 .fill({color:this.legendColor,fill:this.legendColor});
-            canvas.text(`${mag+2} 등성`).move(cx-270, cy - 175 + mag * 15)
+            canvas.text(`${mag+2} 등성`).move(cx-270, cy - 180 + mag * 15)
                 .font({fill:this.legendColor, size:this.timeTextSize,family:'Inconsolata'})
         }
-        canvas.text(`아빠별 별자리판`).move(cx - 160, cy-260)
+        canvas.text(`아빠별 별자리판`).move(cx - 160, cy-270)
                 .font({fill:this.legendColor, size:50,family:'Inconsolata'});
      
     }
