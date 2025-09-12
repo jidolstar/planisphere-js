@@ -53,6 +53,11 @@ class Planisphere{
     #panX = 0;
     #panY = 0;
 
+    // Zoom 상태
+    #scale = 1;
+    #minScale = 0.6;
+    #maxScale = 3.0;
+
     constructor({
         wrapperDomId,
         currentDate = new Date(),
@@ -140,12 +145,14 @@ class Planisphere{
             this.#parentDom.addEventListener('touchmove',  this.#touchMoveMobile.bind(this),  { capture: true, passive: false });
             this.#parentDom.addEventListener('touchend',   this.#touchEndMobile.bind(this),   { capture: true, passive: false });
             this.#parentDom.addEventListener('touchcancel',this.#touchEndMobile.bind(this),   { capture: true, passive: false });
+
         } else {
             // PC → 마우스 전용
             this.#parentDom.addEventListener('mousedown', this.#mouseDown.bind(this));
             this.#parentDom.addEventListener('mousemove', this.#mouseMove.bind(this));
             this.#parentDom.addEventListener('mouseup',   this.#mouseUp.bind(this));
             this.#parentDom.addEventListener('mouseleave',this.#mouseUp.bind(this));
+            this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive: false });
             // 우클릭 드래그 pan 지원 시 컨텍스트 메뉴 방지(선택)
             this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
         }
@@ -166,14 +173,21 @@ class Planisphere{
     #applyTransform() {
         this.skyPanel.transform({
             rotate: this.#currentRotation,
-            translate: [this.#panX, this.#panY]
+            translate: [this.#panX, this.#panY],
+            scale: this.#scale,
+            ox: 0, oy: 0
         });
         this.topPanel.transform({
             rotate: this.#topPanelRotation,
-            translate: [this.#panX, this.#panY]
+            translate: [this.#panX, this.#panY],
+            scale: this.#scale,
+            ox: 0, oy: 0
         });
         this.infoPanel.transform({
-            translate: [this.#panX, this.#panY]
+            rotate: 0,
+            translate: [this.#panX, this.#panY],
+            scale: this.#scale,
+            ox: 0, oy: 0
         });
     }
     #resize(e) {
@@ -224,13 +238,22 @@ class Planisphere{
         }
         this.#applyTransform();
     }
-
     #mouseUp(e) {
         if (!this.#dragging) return;
         if (!this.#panning) this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
         this.#panning  = false;
     }
+    #onWheel(e) {
+        e.preventDefault(); // 스크롤 방지
+        const k = 0.001;    // 감도
+        const factor = Math.exp(-e.deltaY * k);
+        let next = this.#scale * factor;
+        next = Math.max(this.#minScale, Math.min(this.#maxScale, next));
+        this.#scale = next;
+        this.#applyTransform();
+    }
+
     #touchStartMobile(e) {
         e.preventDefault(); // 스크롤/바운스 방지
         if (this.#dragging) return;
@@ -283,71 +306,10 @@ class Planisphere{
         this.#dragging = false;
         this.#panning  = false;
     }
-
-    
-    // #touchStart(e){
-    //     //console.log("touchStart");
-    //     if(this.#dragging) return;
-    //     this.#dragging = true;
-    //     let rect = this.#parentDom.getBoundingClientRect(); //SVG viewBox와 SVG viewport의 크기가 다르기 때문에 마우스 좌표로 회전하려면 viewport기준으로 해야함. https://a11y.gitbook.io/graphics-aria/svg-graphics/svg-layout#svg-viewport
-    //     this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
-    //     this.#screenCenterY = rect.top + rect.height * 0.5 + this.#panY;
-    //     const pageX = e.touches ? e.touches[0].pageX : e.pageX;
-    //     const pageY = e.touches ? e.touches[0].pageY : e.pageY;
-        
-    //     if ((e.shiftKey || e.ctrlKey) || (e.touches && e.touches.length === 2)) {
-    //         this.#panning = true;
-    //         this.#panStartX = pageX;
-    //         this.#panStartY = pageY;
-    //         this.#currentRotation = this.#lastRotation;
-    //     } else {
-    //         this.#panning = false;
-    //         this.#dragDownX = pageX - this.#screenCenterX;
-    //         this.#dragDownY = pageY - this.#screenCenterY;
-    //     }
-    //     //console.log("touchStart", `dragDownX=${this.#dragDownX}`, `e.pageX=${e.pageX}`);
-    // }
-    // #touchMove(e){
-    //     //console.log("touchMove");
-    //     if(!this.#dragging) return;
-    //     const pageX = e.touches ? e.touches[0].pageX : e.pageX;
-    //     const pageY = e.touches ? e.touches[0].pageY : e.pageY;
-
-    //     if (this.#panning) {
-    //         // 이동 (pan)
-    //         this.#panX += pageX - this.#panStartX;
-    //         this.#panY += pageY - this.#panStartY;
-    //         this.#panStartX = pageX;
-    //         this.#panStartY = pageY;
-    //     } else {
-    //         // 회전
-    //         let r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
-    //         let r2 = Math.atan2(pageY - this.#screenCenterY, pageX - this.#screenCenterX);
-    //         let deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
-    //         this.#currentRotation = this.#lastRotation + deltaR;
-    //     }
-    //     this.#applyTransform();
-    // }
-    // #touchEnd(e){
-    //     if(!this.#dragging) return;
-    //     if(!this.#panning) this.#lastRotation = this.#currentRotation;
-    //     this.#dragging = false;
-    //     this.#panning = false;
-    // }
     #render(){
         this.#renderSkyPanel();
         this.#renderTopPanel();
         this.#renderInfoPanel();
-
-        /*
-        console.log(conname.root.data.conname[0]);
-        conname.root.data.conname.forEach(c => {
-            console.log(`${c.RA},${c.DE},"${c.NAME}",`);
-        });
-        console.log(AstroMath.mod(364.1, 10));
-        console.log(AstroMath.normalize(301, 10, 300));
-        console.log("AstroTime.jd(2022,08,26,22,35,0) = ", AstroTime.jd(2022,08,26,22,35,0));
-        */
     }
     #renderSkyPanel(){
         const canvas = this.skyPanel;
@@ -357,7 +319,6 @@ class Planisphere{
         const year = this.currentDate.getFullYear()
         const daysInYear = this.astroTime.daysInYear(year);
         const dailyStep = AstroMath.TPI / daysInYear;
-        //const dailyStep = 0.0;
         let path = ''; 
 
         //날짜 눈금부분 
@@ -552,10 +513,10 @@ class Planisphere{
         }
     }
     #renderTopPanel(){
-        let canvas = this.topPanel;
-        let diameter = this.radius * 2;
-        let cx = 0; //this.centerX;
-        let cy = 0; //this.centerY;
+        const canvas = this.topPanel;
+        const diameter = this.radius * 2;
+        const cx = 0; //this.centerX;
+        const cy = 0; //this.centerY;
         let path = ''; 
 
         //현재시간 지평좌표계->적도좌표계 행렬 
@@ -651,11 +612,12 @@ class Planisphere{
             }
         }
         canvas.path(path).fill('none').stroke({width: 1, color:this.timeLineColor});  
+
     }
     #renderInfoPanel(){
-        let canvas = this.infoPanel;
-        let cx = 0;//this.centerX;
-        let cy = 0;//this.centerY;
+        const canvas = this.infoPanel;
+        const cx = 0;//this.centerX;
+        const cy = 0;//this.centerY;
 
         //별 등성 범례
         let radius = 0.5;
@@ -679,5 +641,5 @@ class Planisphere{
                 .font({fill:this.legendColor, size:50,family:'Inconsolata'});
      
     }
-
+    
 }
