@@ -85,8 +85,8 @@
     <div class="ps-modal-body">
       
       <section>
-        <h3>템플릿</h3>
-        <div class="ps-template-options">
+        <h3>테마</h3>
+        <div class="ps-theme-options">
           <button data-template="default">일반</button>
           <button data-template="dark">다크</button>
           <button data-template="white">화이트</button>
@@ -123,7 +123,7 @@ let planisphere = new Planisphere({
     lon: 126.98,
     lat: 37.57,
     dgmt: 9,
-    styles: {},
+    styles: Planisphere.lightStyles,
     isMobile: isMobile
 });
 
@@ -233,30 +233,6 @@ toggleBtn.addEventListener("click", () => {
   toggleBtn.textContent = isCollapsed ? "+" : "−";
 });
 
-// PC에서 드래그 이동
-// let dragOffsetX = 0, dragOffsetY = 0, dragging = false;
-
-// bar.addEventListener("mousedown", (e) => {
-//   if (window.innerWidth < 920) return; // 모바일 제외
-//   dragging = true;
-//   dragOffsetX = e.clientX - controls.offsetLeft;
-//   dragOffsetY = e.clientY - controls.offsetTop;
-//   document.body.style.userSelect = "none";
-// });
-
-// window.addEventListener("mousemove", (e) => {
-//   if (!dragging) return;
-//   controls.style.left = `${e.clientX - dragOffsetX}px`;
-//   controls.style.top = `${e.clientY - dragOffsetY}px`;
-//   controls.style.right = "auto"; // 오른쪽 anchor 해제
-//   controls.style.bottom = "auto"; // 하단 anchor 해제
-// });
-
-// window.addEventListener("mouseup", () => {
-//   dragging = false;
-//   document.body.style.userSelect = "";
-// });
-
 /*********************************
  * 설정 모달 
  *********************************/ 
@@ -297,8 +273,8 @@ modalClose.addEventListener("click", () => {
 });
 
 
-// 템플릿 변경
-document.querySelectorAll(".ps-template-options button").forEach(btn => {
+// 테마 변경
+document.querySelectorAll(".ps-theme-options button").forEach(btn => {
   btn.addEventListener("click", () => {
     const t = btn.dataset.template;
     if (t === "dark") {

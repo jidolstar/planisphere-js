@@ -56,13 +56,13 @@
 .ps-modal-body section { margin-bottom:20px; }
 .ps-modal-body h3 { margin:10px 0; font-size:15px; }
 
-/* 템플릿 버튼 */
-.ps-template-options {
+/* 테마 버튼 */
+.ps-theme-options {
   display:flex; 
   gap:8px; 
   flex-wrap:wrap;
 }
-.ps-template-options button {
+.ps-theme-options button {
   flex:1 1 auto;
   padding:8px 12px;
   border:none;
@@ -72,7 +72,7 @@
   cursor:pointer;
   font-size:14px;
 }
-.ps-template-options button:hover {
+.ps-theme-options button:hover {
   background:rgba(255,255,255,.25);
 }
 

@@ -1,35 +1,132 @@
 ;
 class Planisphere{
-    static #defaultStyles = {
+    //스타일 기본값    
+    static defaultStyles = {
         gradientBackgroundColor: ['#777794', '#adb2ce'],
-        bgColor: '#000',             // Panel 기본색
-        raLineColor: '#aaa',         // 적경 라인 색
-        decLineColor1: '#aaa',       // 적위 라인 색
-        decLineColor2: '#facc99',    // 적위 적도 라인 색
-        EquatorLineColor: '#aa9944', // 적도 선 라인
-        eclipticLineColor: '#9955aa',// 황도 선 라인
-        raTextColor: '#fff',         // 적경 글자 색
-        raTextSize: 10,              // 적경 글자 크기
-
-        dateCircleBgColor: '#3d44aa',// 날짜환 배경색
-        dateColor: '#fff',           // 날짜 글자 표시색
+        bgColor: '#000',
+        raLineColor: '#aaa',
+        raLineStroke: 1,
+        decLineColor1: '#aaa',
+        decLineColor2: '#facc99',
+        decLineStroke: 1,
+        //equatorLineColor: '#aa9944',
+        //eclipticLineColor: '#9955aa',
+        raTextColor: '#fff',
+        raTextSize: 10,
+        dateCircleBgColor: '#3d44aa',
+        dateCircleOuterStroke: { width: 6, color: '#000' },
+        dateCircleInnerStroke: { width: 3, color: '#000' },
+        dateColor: '#fff',
         dateMonthTextSize: 11,
         dateDayTextSize: 10,
-
-        conNameTextColor: '#AACC00', // 별자리 이름 글자색
-        conNameTextSize: 10,         // 별자리 이름 글자크기
-        conlineColor: '#f06',        // 별자리선 색
-        conlineOpacity: 0.7,         // 별자리선 투명도
-
-        topPanelBgColor: '#ffaa00',  // 상단패널 배경색
-        timeLineColor: '#000',       // 시간 눈금 색
-        timeTextColor: '#000',       // 시간 텍스트 색
+        conNameTextColor: '#AACC00',
+        conNameTextSize: 10,
+        conlineColor: '#f06',
+        conlineOpacity: 0.7,
+        topPanelBgColor: '#ffaa00',
+        topPanelStroke: { width: 3, color: '#000' },
+        timeLineColor: '#000',
+        timeLineStroke: 1,
+        timeTextColor: '#000',
         timeTextSize: 11,
-
-        legendColor: '#000',         // 범례 색
+        legendColor: '#000',
         legendTextSize: 11,
-        nwesColor: '#000',           // 동서남북 글자색
-        nwesTextSize: 12
+        nwesColor: '#000',
+        nwesTextSize: 12,
+        starColors: {
+            O: '#9bb0ff', 
+            B: '#aabfff',
+            A: '#cad7ff',
+            F: '#f8f7ff',
+            G: '#fff4ea',
+            K: '#ffd2a1',
+            M: '#ffcc6f',
+            default: '#fff'
+        }
+    };
+
+    static darkStyles = {
+        gradientBackgroundColor: ['#1a1a1a', '#333333'],
+        bgColor: '#000',
+        raLineColor: '#666',
+        raLineStroke: 1,
+        decLineColor1: '#444',
+        decLineColor2: '#777',
+        decLineStroke: 1,
+        raTextColor: '#ccc',
+        raTextSize: 10,
+        dateCircleBgColor: '#222266',
+        dateCircleOuterStroke: { width: 6, color: '#444' },
+        dateCircleInnerStroke: { width: 3, color: '#666' },
+        dateColor: '#eee',
+        dateMonthTextSize: 11,
+        dateDayTextSize: 10,
+        conNameTextColor: '#88cc44',
+        conNameTextSize: 10,
+        conlineColor: '#44cc88',
+        conlineOpacity: 0.6,
+        topPanelBgColor: '#333333',
+        topPanelStroke: { width: 3, color: '#555' },
+        timeLineColor: '#888',
+        timeLineStroke: 1,
+        timeTextColor: '#ccc',
+        timeTextSize: 11,
+        legendColor: '#ccc',
+        legendTextSize: 11,
+        nwesColor: '#ccc',
+        nwesTextSize: 12,
+        starColors: {
+            O: '#9bb0ff', 
+            B: '#aabfff',
+            A: '#cad7ff',
+            F: '#f8f7ff',
+            G: '#fff4ea',
+            K: '#ffd2a1',
+            M: '#ffcc6f',
+            default: '#fff'
+        }
+    };
+
+    static lightStyles = {
+        gradientBackgroundColor: ['#e6e6f0', '#ffffff'],
+        bgColor: '#fff',
+        raLineColor: '#444',
+        raLineStroke: 1,
+        decLineColor1: '#666',
+        decLineColor2: '#999',
+        decLineStroke: 1,
+        raTextColor: '#000',
+        raTextSize: 10,
+        dateCircleBgColor: '#dde5ff',
+        dateCircleOuterStroke: { width: 6, color: '#aaa' },
+        dateCircleInnerStroke: { width: 3, color: '#888' },
+        dateColor: '#000',
+        dateMonthTextSize: 11,
+        dateDayTextSize: 10,
+        conNameTextColor: '#224488',
+        conNameTextSize: 10,
+        conlineColor: '#2266cc',
+        conlineOpacity: 0.7,
+        topPanelBgColor: '#f2f2f2',
+        topPanelStroke: { width: 3, color: '#bbb' },
+        timeLineColor: '#444',
+        timeLineStroke: 1,
+        timeTextColor: '#000',
+        timeTextSize: 11,
+        legendColor: '#222',
+        legendTextSize: 11,
+        nwesColor: '#222',
+        nwesTextSize: 12,
+        starColors: {
+            O: '#3366ff',   // 더 짙은 파랑
+            B: '#4d7fff',   // 중간 파랑
+            A: '#668cff',   // 연한 파랑
+            F: '#9999ff',   // 연보라 톤
+            G: '#cc9900',   // 황금빛
+            K: '#ff6600',   // 주황
+            M: '#cc0000',   // 빨강
+            default: '#222' // 어두운 회색 (밝은 배경에서 기본값)
+        }
     };
     #parentDom;
 
@@ -72,7 +169,7 @@ class Planisphere{
         if (Math.abs(lat) < 20) throw new Error("적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
-        Object.assign(this, Planisphere.#defaultStyles, styles);
+        this.styles = Object.assign({}, Planisphere.defaultStyles, styles);
 
         //좌표 관련 
         this.width = 1000;
@@ -104,7 +201,7 @@ class Planisphere{
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
         wrapper.style.height = '100vh';
-        wrapper.style.background = 'linear-gradient(to bottom, '+ this.gradientBackgroundColor[0] + ', ' + this.gradientBackgroundColor[1] + ')'; 
+        wrapper.style.background = 'linear-gradient(to bottom, '+ this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')'; 
 
         // planisphere 영역 생성
         const planisphereDiv = document.createElement('div');
@@ -342,11 +439,11 @@ class Planisphere{
         let path = ''; 
 
         //날짜 눈금부분 
-        canvas.circle(diameter + 85).center(cx, cy).stroke({ width: 6, color:'#000'}); //최외곽 
-        canvas.circle(diameter + 85).center(cx, cy).fill(this.dateCircleBgColor); //날짜선 배경 
-        canvas.circle(diameter).center(cx, cy).stroke({width: 3, color:'#000'}); //날짜선 안쪽 선 
-        canvas.circle(diameter).center(cx, cy).fill(this.bgColor); //별자리 영역 
-        canvas.circle(diameter + 45).center(cx, cy).fill('none').stroke({width: 1, color:this.dateColor}); //날짜/월 경계선 
+        canvas.circle(diameter + 85).center(cx, cy).stroke({ width: this.styles.dateCircleOuterStroke.width, color:this.styles.dateCircleOuterStroke.color}); //최외곽 
+        canvas.circle(diameter + 85).center(cx, cy).fill(this.styles.dateCircleBgColor); //날짜선 배경 
+        canvas.circle(diameter).center(cx, cy).stroke({width: this.styles.dateCircleInnerStroke.width, color:this.styles.dateCircleInnerStroke.color}); //날짜선 안쪽 선 
+        canvas.circle(diameter).center(cx, cy).fill(this.styles.bgColor); //별자리 영역 
+        canvas.circle(diameter + 45).center(cx, cy).fill('none').stroke({width: 1, color:this.styles.dateColor}); //날짜/월 경계선 
 
         //날짜 월 표시 
         for(let month = 1; month <= 12; month++){
@@ -362,7 +459,7 @@ class Planisphere{
             y = r * Math.sin(t);
             canvas.text(`${month}월`).move(cx + x - 12, cy + y - 13)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
-                .font({fill:this.dateColor, size:this.dateMonthTextSize,
+                .font({fill:this.styles.dateColor, size:this.styles.dateMonthTextSize,
                     family:'Inconsolata',opacity:0.8});
         }
 
@@ -384,7 +481,7 @@ class Planisphere{
             path += `M${cx + x1} ${cy + y1} L${cx + x2} ${cy + y2} `;
         }
         canvas.path(path).fill('none').stroke({
-            color:this.dateColor,
+            color:this.styles.dateColor,
             width:1,
             linecap:'round',
             linejoin:'round',
@@ -415,7 +512,7 @@ class Planisphere{
                         .move(cx + x2txt - 7, cy + y2txt - 3.5)
                         .transform({ origin:[cx + x2txt, cy + y2txt],
                                     rotate: AstroMath.R2D * (Math.atan2(y2txt, x2txt) - AstroMath.HPI) })
-                        .font({ fill: this.dateColor, size: this.dateDayTextSize, family: 'Inconsolata', opacity: 0.8 });
+                        .font({ fill: this.styles.dateColor, size: this.styles.dateDayTextSize, family: 'Inconsolata', opacity: 0.8 });
                         r2 = r1 + 6;
                     } else if (dayOfMonth % 5 === 0) {
                         r2 = r1 + 5;
@@ -429,7 +526,7 @@ class Planisphere{
             }
         }
         canvas.path(path).fill('none').stroke({
-            color:this.dateColor,
+            color:this.styles.dateColor,
             width:1,
             linecap:'round',
             linejoin:'round',
@@ -443,8 +540,8 @@ class Planisphere{
             path += `M${cx} ${cy} L${cx+x} ${cy+y} `;
         }
         canvas.path(path).fill('none').stroke({
-            color:this.raLineColor,
-            width:1,
+            color:this.styles.raLineColor,
+            width:this.styles.raLineStroke,
             linecap:'round',
             linejoin:'round',
             opacity:0.4
@@ -454,7 +551,7 @@ class Planisphere{
         for(let ra=0; ra < 24; ra = ra + this.intervalRA){
             const {x, y} = this.proj.project(ra * AstroMath.H2R, -3 * AstroMath.D2R);
             canvas.text(`${ra}h`).move(cx + x - 6, cy + y - 6)
-                .font({fill:this.raTextColor, size:this.raTextSize,family:'Inconsolata'})
+                .font({fill:this.styles.raTextColor, size:this.styles.raTextSize,family:'Inconsolata'})
                 .transform({
                     rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)
                 })
@@ -464,13 +561,13 @@ class Planisphere{
         for(let dec = -90.0; dec < 90.0; dec += this.intervalDE){
             const {x, y} = this.proj.project(0, dec * AstroMath.D2R);
             if(Math.sqrt(x*x,y*y) < this.proj.screenRadius){
-                let color = this.decLineColor1
+                let color = this.styles.decLineColor1
                 let opacity = 0.4;
                 if(Math.abs(dec) < 0.00001){ //천구의 적도이면
-                    color = this.decLineColor2;
+                    color = this.styles.decLineColor2;
                     opacity = 0.7;
                 }
-                canvas.circle(x * 2).center(cx, cy).fill('none').stroke({color,width:1,opacity});
+                canvas.circle(x * 2).center(cx, cy).fill('none').stroke({color, width:this.styles.decLineStroke, opacity});
             }
         }
 
@@ -484,7 +581,7 @@ class Planisphere{
             }
         }
         let conline = canvas.path(path);
-        conline.fill('none').stroke({color:this.conlineColor,width:1,linecap:'round',linejoin:'round',opacity:this.conlineOpacity});
+        conline.fill('none').stroke({color:this.styles.conlineColor,width:1,linecap:'round',linejoin:'round',opacity:this.styles.conlineOpacity});
 
         //별 
         let stars = starList.split("\n");
@@ -498,25 +595,15 @@ class Planisphere{
                 let type = star[5];
                 let radius = 0.5;
                 let alpha = 0.5;
-                let color = '#fff';
+                let color = this.styles.starColors[type] || this.styles.starColors['default'];
                 if(mag < -1){radius = 7; alpha = 1}
                 else if(mag < 0){radius = 6; alpha = 1}
                 else if(mag < 1){radius = 5; alpha = 1}
                 else if(mag < 2){radius = 4; alpha = 1}
                 else if(mag < 3){radius = 3; alpha = 0.8}
                 else if(mag < 4){radius = 2; alpha = 0.8}
-                else if(mag < 5){radius = 1; alpha = 0.5}
-                switch(type){
-                    case "O":color='#9bb0ff';break;
-                    case "B":color='#aabfff';break;
-                    case "A":color='#cad7ff';break;
-                    case "F":color='#f8f7ff';break;
-                    case "G":color='#fff4ea';break;
-                    case "K":color='#ffd2a1';break;
-                    case "M":color='#ffcc6f';break;
-                    default: color='#fff';
-                }
-                canvas.circle(radius*2).center(cx + x, cy + y).fill({color,alpha})
+                else if(mag < 5){radius = 1; alpha = 0.5}            
+                canvas.circle(radius*2).center(cx + x, cy + y).fill({color, alpha})
             }
         }
 
@@ -528,7 +615,7 @@ class Planisphere{
             if(Math.sqrt(x*x+y*y) < this.proj.screenRadius - 30){
                 canvas.text(name).move(cx + x, cy + y)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
-                .font({fill:this.conNameTextColor,size:this.conNameTextSize,family:'Inconsolata',opacity:0.8});
+                .font({fill:this.styles.conNameTextColor,size:this.styles.conNameTextSize,family:'Inconsolata',opacity:0.8});
             }
         }
     }
@@ -558,7 +645,7 @@ class Planisphere{
             else path += 'L';
             path += `${cx+x} ${cy+y} `;
         }
-        canvas.path(path).fill(this.topPanelBgColor).stroke({width: 3, color:'#000'});  
+        canvas.path(path).fill(this.styles.topPanelBgColor).stroke({width: this.styles.topPanelStroke.width, color:this.styles.topPanelStroke.color});  
 
         //동서남북 
         const arrayAzimuthName = ["북","북동","동","남동","남","남서","서","북서"];
@@ -581,7 +668,7 @@ class Planisphere{
             let dx = 0, dy = 5; 
             if(name.length == 1) dx = 5; else dx = 10;
             canvas.text(`${arrayAzimuthName[i]}`).move(cx + x1 - dx, cy + y1 - dy)
-                .font({fill:this.nwesColor, size:this.nwesTextSize,family:'Inconsolata'})
+                .font({fill:this.styles.nwesColor, size:this.styles.nwesTextSize,family:'Inconsolata'})
                 .transform({
                     origin:[cx + x1, + cy  + y1],
                     rotate:AstroMath.R2D * (Math.atan2(y1-y2, x1-x2)-AstroMath.HPI)
@@ -608,7 +695,7 @@ class Planisphere{
             const y3 = (this.radius - 16) * sin_lon;
             //canvas.line(0, 0, cx + x2, + cy  + y2).stroke({width:1,color:'#f00'});
             canvas.text(`${hour}시`).move(cx + x3 - 9, cy + y3 - 6)
-                .font({fill:this.timeTextColor, size:this.timeTextSize,family:'Inconsolata'})
+                .font({fill:this.styles.timeTextColor, size:this.styles.timeTextSize,family:'Inconsolata'})
                 .transform({
                     origin:[cx + x3, + cy  + y3],
                     rotate:AstroMath.R2D * (Math.atan2(y3, x3)-AstroMath.HPI-AstroMath.PI)
@@ -631,7 +718,7 @@ class Planisphere{
                 path += `M${x1 + cx} ${y1 + cy} L${x2 + cx} ${y2 + cy} `
             }
         }
-        canvas.path(path).fill('none').stroke({width: 1, color:this.timeLineColor});  
+        canvas.path(path).fill('none').stroke({width: this.styles.timeLineStroke, color:this.styles.timeLineColor});  
 
     }
     #renderInfoPanel(){
@@ -653,12 +740,12 @@ class Planisphere{
             else{radius = 0.5; alpha = 0.5}
             canvas.circle(radius*2)
                 .center(cx-280 - radius/2, cy - 170 + mag * 15)
-                .fill({color:this.legendColor,fill:this.legendColor});
+                .fill({color:this.styles.legendColor,fill:this.styles.legendColor});
             canvas.text(`${mag+2} 등성`).move(cx-270, cy - 180 + mag * 15)
-                .font({fill:this.legendColor, size:this.timeTextSize,family:'Inconsolata'})
+                .font({fill:this.styles.legendColor, size:this.styles.legendTextSize,family:'Inconsolata'})
         }
         canvas.text(`아빠별 별자리판`).move(cx - 160, cy-270)
-                .font({fill:this.legendColor, size:50,family:'Inconsolata'});
+                .font({fill:this.styles.legendColor, size:50,family:'Inconsolata'});
      
     }
     
