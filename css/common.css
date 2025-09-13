@@ -1,2 +1,8 @@
-html, body { margin:0; padding:0; overflow: hidden; }
+html, body { margin:0; padding:0; height: 100%; margin:0; overflow: hidden; }
+#planisphere { position: relative; width: 100%; height: 100vh; }
+@supports (height: 100dvh) {
+  #planisphere { height: 100dvh; }
+}
+
 svg text{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+

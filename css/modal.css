@@ -16,7 +16,7 @@
   border-radius:12px;
 
   width:90%;
-  max-width:600px;      /* PC에서는 카드 크기 제한 */
+  max-width:500px;      /* PC에서는 카드 크기 제한 */
   max-height:80%;
   display:flex;
   flex-direction:column;
@@ -65,7 +65,7 @@
 }
 
 .ps-theme-select img {
-  width: 120px;
+  width: 90px;
   height: auto;
   border-radius: 8px;
   border: 2px solid transparent;

@@ -343,7 +343,8 @@ class Planisphere{
         const size = Math.min(w, h);
 
         // 브라우저 확대/축소 비율 반영
-        const scale = window.devicePixelRatio || 1;
+        //const scale = window.devicePixelRatio || 1;
+        const scale = 1;
 
         this.#parentDom.style.width = (size * scale) + 'px';
         this.#parentDom.style.height = (size * scale) + 'px';
@@ -407,7 +408,7 @@ class Planisphere{
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
         this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
-        console.log('e.touches.length:', e.touches.length);
+        //console.log('e.touches.length:', e.touches.length);
 
         if (e.touches.length === 1){
             this.#dragging = true;
@@ -459,9 +460,9 @@ class Planisphere{
         }
 
         this.#applyTransform();
-        }
+    }
 
-        #touchEndMobile(e){
+    #touchEndMobile(e){
         e.preventDefault();
 
         if (e.touches.length === 1){
@@ -478,7 +479,7 @@ class Planisphere{
             this.#dragging = false;
             this.#panning  = false;
         }
-        }
+    }
     #render(){
         this.#renderSkyPanel();
         this.#renderTopPanel();

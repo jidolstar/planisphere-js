@@ -1,21 +1,20 @@
 /* 컨트롤 패널 */
-.ps-controls {
-  position:absolute;
-  bottom:12px;
-  left:50%;                          /* 가운데 정렬 기준 */
-  transform:translateX(-50%);        /* 가운데 정렬 보정 */
-  display:flex;
-  flex-direction:column;
-  border-radius:12px;
-  background:rgba(0,0,0,.35);
+.ps-controls{
+  position: fixed;                 /* ✅ 뷰포트 기준 */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); /* ✅ 노치/홈버튼 영역 보정 */
+  width: min(90vw, 540px);
+  border-radius: 12px;
+  background: rgba(0,0,0,.35);
   backdrop-filter: blur(6px);
-  color:#fff;
-  font:14px/1.4 system-ui, -apple-system, Roboto;
+  color:#fff; font:14px/1.4 system-ui, -apple-system, Roboto, sans-serif;
+  display:flex; flex-direction:column; gap:6px;
+  padding:8px;
   pointer-events:auto;
-  transition:all 0.3s ease;
-  width:90%;                         /* 모바일 기본 폭 */
-  max-width: 480px;                  /* 너무 넓어지지 않도록 제한 */
+  transition: transform .2s ease, bottom .2s ease;
 }
+.ps-controls.collapsed { padding-bottom: 6px; }
 .ps-controls .row{ display:flex; gap:8px; flex-wrap:wrap; }
 .ps-controls input, .ps-controls button{
   flex:1 1 auto; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,.2);
