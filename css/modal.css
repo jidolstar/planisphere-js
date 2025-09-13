@@ -1,0 +1,101 @@
+.ps-modal {
+  display:none;
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(255,255,255,0.4);
+  z-index:1000;
+  display:flex;
+  justify-content:center;
+  align-items:center;  /* 세로 중앙 고정 */
+}
+
+.ps-modal-content {
+  background:rgba(0,0,0,.7);
+  backdrop-filter: blur(8px);
+  color:#fff;
+  border-radius:12px;
+
+  width:90%;
+  max-width:600px;      /* PC에서는 카드 크기 제한 */
+  max-height:80%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  font:14px/1.4 system-ui, -apple-system, Roboto, sans-serif;
+}
+/* 헤더 */
+.ps-modal-header {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 14px;
+  background:rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.2);
+}
+.ps-modal-header h2 {
+  margin:0; 
+  font-size:16px; 
+  flex:1; 
+  text-align:center;
+}
+.ps-modal-header button {
+  background:none; 
+  border:none; 
+  color:#fff;
+  font-size:16px; 
+  cursor:pointer;
+  flex:0 0 auto;
+}
+
+/* 본문 */
+.ps-modal-body {
+  padding:14px;
+  overflow-y:auto;
+  flex:1;
+}
+.ps-modal-body section { margin-bottom:20px; }
+.ps-modal-body h3 { margin:10px 0; font-size:15px; }
+
+/* 템플릿 버튼 */
+.ps-template-options {
+  display:flex; 
+  gap:8px; 
+  flex-wrap:wrap;
+}
+.ps-template-options button {
+  flex:1 1 auto;
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  cursor:pointer;
+  font-size:14px;
+}
+.ps-template-options button:hover {
+  background:rgba(255,255,255,.25);
+}
+
+/* 반응형 */
+@media (max-width: 600px) {
+  .ps-modal-content {
+    max-width:100%; 
+    max-height:90%; 
+    border-radius:10px;
+  }
+  .ps-modal-header h2 { font-size:14px; }
+  .ps-modal-body { padding:10px; font-size:13px; }
+}
+
+/* 링크 스타일 */
+.ps-modal-content a {
+  color: #4da3ff;               
+  text-decoration: none;         
+  font-weight: 500;            
+  transition: color 0.2s ease;  
+}
+
+.ps-modal-content a:hover {
+  color: #82c4ff;              
+  text-decoration: underline;   
+}

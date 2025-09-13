@@ -31,10 +31,6 @@ class Planisphere{
         nwesColor: '#000',           // 동서남북 글자색
         nwesTextSize: 12
     };
-    static isMobile() {
-       return /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent);
-    }
-
     #parentDom;
 
     //마우스로 별자리판 회전하기 위해 사용하는 속성 
@@ -64,7 +60,8 @@ class Planisphere{
         lon = 126.98,
         lat = 37.57,
         dgmt = 9,
-        styles = {}
+        styles = {},
+        isMobile = false
     }){
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
         this.limitDE = -70 * AstroMath.D2R
@@ -139,13 +136,12 @@ class Planisphere{
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
 
         // 기존 addEventListener 블록 교체
-        if (Planisphere.isMobile()) {
+        if (isMobile) {
             // 모바일 → 터치 전용
             this.#parentDom.addEventListener('touchstart', this.#touchStartMobile.bind(this), { capture: true, passive: false });
             this.#parentDom.addEventListener('touchmove',  this.#touchMoveMobile.bind(this),  { capture: true, passive: false });
             this.#parentDom.addEventListener('touchend',   this.#touchEndMobile.bind(this),   { capture: true, passive: false });
             this.#parentDom.addEventListener('touchcancel',this.#touchEndMobile.bind(this),   { capture: true, passive: false });
-
         } else {
             // PC → 마우스 전용
             this.#parentDom.addEventListener('mousedown', this.#mouseDown.bind(this));

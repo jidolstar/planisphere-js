@@ -15,77 +15,24 @@
 <meta property="og:image" content="https://jidolstar.github.io/planisphere-js/ogimage.png">
 <link rel="canonical" href="https://jidolstar.github.io/planisphere-js/">	
 <title>아빠별 별자리판 Planisphere</title>
-<style>
-html, body { margin:0; padding:0; overflow: hidden; }
-svg text{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-.ps-controls{
-  position:absolute;
-  bottom:12px; left:8px; right:8px;
-  display:flex; flex-direction:column;
-  border-radius:12px;
-  background:rgba(0,0,0,.35); backdrop-filter: blur(6px);
-  color:#fff; font:14px/1.4 system-ui, -apple-system, Roboto;
-  pointer-events:auto;
-  transition: height 0.3s ease, width 0.3s ease;
-}
-.ps-controls .row{ display:flex; gap:8px; flex-wrap:wrap; }
-.ps-controls input, .ps-controls button{
-  flex:1 1 auto; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,.2);
-  background:rgba(255,255,255,.08); color:#fff;
-}
-.ps-controls button{ cursor:pointer; }
-.ps-controls-bar {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:4px 6px; background:rgba(0,0,0,.5); border-radius:12px 12px 0 0;
-  cursor:grab; height: 28px;
-}
-.ps-controls-bar:active { cursor:grabbing; }
-.ps-bar-btn {  
-  flex:0 0 auto !important; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center;
-  width:20px; 
-  height:20px;
-  background:none; 
-  border:none; 
-  color:#fff; 
-  font-size:14px;
-  padding:0; 
-  cursor:pointer; 
-  border-radius:4px;
-}
-.ps-bar-btn:hover { background:rgba(255,255,255,0.15); }
-.ps-bar-title { flex:1; text-align:center; font-weight:600; font-size:13px;}
-.ps-controls-body {
-  padding:8px; display:flex; flex-direction:column; gap:6px;
-  overflow:hidden;transition: max-height 0.3s ease;
-}
-.ps-controls.collapsed .ps-controls-body { max-height:0; padding:0; margin:0; overflow:hidden;}
-.ps-controls.collapsed .ps-controls-bar { border-radius:12px; }
-.ps-adjust-col { display:flex; flex-direction:column; align-items:center; flex:1; min-width:50px; gap:4px; }
-.ps-adjust-label { font-weight:600; font-size:12px;}
-.ps-adjust-btn { width:32px; height:28px; line-height:1; padding:0; border-radius:6px;}
-.ps-adjust-btn.minus { background:rgba(255,0,0,.3); }
-.ps-adjust-btn.plus  { background:rgba(0,255,0,.3); }
-@media (min-width: 920px){
-  .ps-controls{ left:12px; right:auto; width:460px; }
-  .ps-controls{ left:auto; right:12px; bottom:12px; width:420px; }
-}
-</style>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/control-panel.css">
+<link rel="stylesheet" href="css/modal.css">
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
-<script src="astro.js"></script>
-<script src="conline.js"></script>
-<script src="conname.js"></script>
-<script src="stars.js"></script>
-<script src="planisphere.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/conline.js"></script>
+<script src="js/conname.js"></script>
+<script src="js/stars.js"></script>
+<script src="js/planisphere.js"></script>
 </head>
 <body>
 <div id="planisphere"></div>
+
+<!-- 컨트롤 패널 -->
 <div class="ps-controls" id="ps-controls">
   <div class="ps-controls-bar" id="ps-controls-bar">
     <button class="ps-bar-btn" id="ps-settings">⚙</button>
-    <div class="ps-bar-title">별자리판 컨트롤</div>
+    <div class="ps-bar-title">날짜/시간 설정</div>
     <button class="ps-bar-btn" id="ps-toggle">−</button>
   </div>
   <div class="ps-controls-body" id="ps-controls-body">
@@ -127,15 +74,62 @@ svg text{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: no
     </div>
   </div>
 </div>
+
+<!-- 설정 모달 -->
+<div class="ps-modal" id="ps-modal" style="display:none;">
+  <div class="ps-modal-content">
+    <div class="ps-modal-header">
+      <button id="ps-modal-close">✕</button>
+      <h2>설정</h2>
+    </div>
+    <div class="ps-modal-body">
+      
+      <section>
+        <h3>템플릿</h3>
+        <div class="ps-template-options">
+          <button data-template="default">일반</button>
+          <button data-template="dark">다크</button>
+          <button data-template="white">화이트</button>
+        </div>
+      </section>
+      
+      <section>
+        <h3>사용법 설명</h3>
+        <div id="ps-usage">
+          <!-- JS에서 PC/모바일 구분 후 채워넣음 -->
+        </div>
+      </section>
+      
+      <section>
+        <h3>제작자</h3>
+        <div>
+            <ul>
+                <li>제작 : 지용호</li>
+                <li>이메일 : <a href="mailto:jidolstar@gmail.com">jidolstar@gmail.com</a></li>
+                <li>Github : <a href="https://github.com/jidolstar/planisphere-js" target="_blank">jidolstar/planisphere-js</a></li>
+            </ul>
+        </div>
+      </section>
+      
+    </div>
+  </div>
+</div>
+
 <script>
+const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
 let planisphere = new Planisphere({
     wrapperDomId: '#planisphere',
     currentDate: new Date(),
     lon: 126.98,
     lat: 37.57,
     dgmt: 9,
-    styles: {}
+    styles: {},
+    isMobile: isMobile
 });
+
+/*********************************
+ * 컨트롤 패널 
+ *********************************/ 
 
 // --- DOM 요소 ---
 const $date = document.getElementById('ps-date');
@@ -240,28 +234,86 @@ toggleBtn.addEventListener("click", () => {
 });
 
 // PC에서 드래그 이동
-let dragOffsetX = 0, dragOffsetY = 0, dragging = false;
+// let dragOffsetX = 0, dragOffsetY = 0, dragging = false;
 
-bar.addEventListener("mousedown", (e) => {
-  if (window.innerWidth < 920) return; // 모바일 제외
-  dragging = true;
-  dragOffsetX = e.clientX - controls.offsetLeft;
-  dragOffsetY = e.clientY - controls.offsetTop;
-  document.body.style.userSelect = "none";
+// bar.addEventListener("mousedown", (e) => {
+//   if (window.innerWidth < 920) return; // 모바일 제외
+//   dragging = true;
+//   dragOffsetX = e.clientX - controls.offsetLeft;
+//   dragOffsetY = e.clientY - controls.offsetTop;
+//   document.body.style.userSelect = "none";
+// });
+
+// window.addEventListener("mousemove", (e) => {
+//   if (!dragging) return;
+//   controls.style.left = `${e.clientX - dragOffsetX}px`;
+//   controls.style.top = `${e.clientY - dragOffsetY}px`;
+//   controls.style.right = "auto"; // 오른쪽 anchor 해제
+//   controls.style.bottom = "auto"; // 하단 anchor 해제
+// });
+
+// window.addEventListener("mouseup", () => {
+//   dragging = false;
+//   document.body.style.userSelect = "";
+// });
+
+/*********************************
+ * 설정 모달 
+ *********************************/ 
+const modal = document.getElementById("ps-modal");
+const modalClose = document.getElementById("ps-modal-close");
+const settingsBtn = document.getElementById("ps-settings");
+const usageDiv = document.getElementById("ps-usage");
+
+// 열기
+settingsBtn.addEventListener("click", () => {
+  modal.style.display = "flex";
+
+  // PC/모바일 안내 구분
+  if (isMobile) {
+    usageDiv.innerHTML = `
+      <p>📱 스마트폰</p>
+      <ul>
+        <li>회전: 한 손가락 드래그</li>
+        <li>이동: 두 손가락 드래그</li>
+        <li>확대/축소: 핀치 제스처</li>
+      </ul>
+    `;
+  } else {
+    usageDiv.innerHTML = `
+      <p>💻 PC</p>
+      <ul>
+        <li>회전: 마우스 드래그</li>
+        <li>이동: 마우스 오른쪽 버튼 드래그</li>
+        <li>확대/축소: 마우스 휠</li>
+      </ul>
+    `;
+  }
 });
 
-window.addEventListener("mousemove", (e) => {
-  if (!dragging) return;
-  controls.style.left = `${e.clientX - dragOffsetX}px`;
-  controls.style.top = `${e.clientY - dragOffsetY}px`;
-  controls.style.right = "auto"; // 오른쪽 anchor 해제
-  controls.style.bottom = "auto"; // 하단 anchor 해제
+// 닫기
+modalClose.addEventListener("click", () => {
+  modal.style.display = "none";
 });
 
-window.addEventListener("mouseup", () => {
-  dragging = false;
-  document.body.style.userSelect = "";
+
+// 템플릿 변경
+document.querySelectorAll(".ps-template-options button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const t = btn.dataset.template;
+    if (t === "dark") {
+      document.body.style.background="#000";
+      planisphere.setStyles({ bgColor:"#000", raLineColor:"#666", raTextColor:"#fff" });
+    } else if (t === "white") {
+      document.body.style.background="#fff";
+      planisphere.setStyles({ bgColor:"#fff", raLineColor:"#000", raTextColor:"#000" });
+    } else {
+      document.body.style.background="#777";
+      planisphere.setStyles({}); // 기본
+    }
+  });
 });
+
 </script>
 </body>
 </html>
