@@ -83,7 +83,10 @@
       <h2>설정</h2>
     </div>
     <div class="ps-modal-body">
-      
+      <p id="ps-welcome-text" style="margin:0; font-size:14px; color:#ccc; display:none; text-align: center;">
+        👋 아빠별 별자리판에 오신 것을 환영합니다!<br>
+        원하는 테마를 선택해 주시고 사용법을 꼭 확인해 주세요.
+      </p>      
       <section>
         <h3>테마</h3>
         <div class="ps-theme-select">
@@ -94,7 +97,7 @@
       </section>
       
       <section>
-        <h3>사용법 설명</h3>
+        <h3>사용법</h3>
         <div id="ps-usage">
           <!-- JS에서 PC/모바일 구분 후 채워넣음 -->
         </div>
@@ -117,13 +120,28 @@
 
 <script>
 const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
+
+// 저장된 테마 불러오기
+const savedTheme = localStorage.getItem("planisphereTheme") || "default";
+let initialStyles;
+if (savedTheme === "dark") {
+  document.body.style.background="#000";
+  initialStyles = Planisphere.darkStyles;
+} else if (savedTheme === "light") {
+  document.body.style.background="#fff";
+  initialStyles = Planisphere.lightStyles;
+} else {
+  document.body.style.background="#777";
+  initialStyles = Planisphere.defaultStyles;
+}
+
 let planisphere = new Planisphere({
     wrapperDomId: '#planisphere',
     currentDate: new Date(),
     lon: 126.98,
     lat: 37.57,
     dgmt: 9,
-    styles: Planisphere.lightStyles,
+    styles: initialStyles,
     isMobile: isMobile
 });
 
@@ -240,13 +258,7 @@ const modal = document.getElementById("ps-modal");
 const modalClose = document.getElementById("ps-modal-close");
 const settingsBtn = document.getElementById("ps-settings");
 const usageDiv = document.getElementById("ps-usage");
-
-// 열기
-settingsBtn.addEventListener("click", () => {
-  modal.style.display = "flex";
-
-  // PC/모바일 안내 구분
-  if (isMobile) {
+if (isMobile) {
     usageDiv.innerHTML = `
       <p>📱 스마트폰</p>
       <ul>
@@ -265,6 +277,23 @@ settingsBtn.addEventListener("click", () => {
       </ul>
     `;
   }
+
+function openSettingsModal(showWelcome = false) {
+  modal.style.display = "flex";    
+  const welcome = document.getElementById("ps-welcome-text");
+
+  modal.classList.add("open");
+
+  if (showWelcome) {
+    welcome.style.display = "block";
+  } else {
+    welcome.style.display = "none";
+  }
+}
+
+// 열기
+settingsBtn.addEventListener("click",  () => {
+  openSettingsModal(false);
 });
 
 // 닫기
@@ -272,14 +301,24 @@ modalClose.addEventListener("click", () => {
   modal.style.display = "none";
 });
 
+// 페이지 로드시 첫 방문 확인
+window.addEventListener("DOMContentLoaded", () => {
+  const firstVisitDone = localStorage.getItem("planisphereFirstVisitDone");
+  if (!firstVisitDone) {
+    openSettingsModal(true);
+    localStorage.setItem("planisphereFirstVisitDone", "true");
+  }
+});
 
 // 테마 변경
 document.querySelectorAll('.ps-theme-select img').forEach(img => {
+  if (img.dataset.theme === savedTheme) img.classList.add("active");
   img.addEventListener("click", () => {
     document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
     img.classList.add('active');
 
     const theme = img.dataset.theme;
+    localStorage.setItem("planisphereTheme", theme); // 로컬 스토리지 저장
     if (theme === "dark") {
       document.body.style.background="#000";
       planisphere.setStyles(Planisphere.darkStyles);
