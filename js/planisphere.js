@@ -201,7 +201,7 @@ class Planisphere{
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
         wrapper.style.height = '100vh';
-        wrapper.style.background = 'linear-gradient(to bottom, '+ this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')'; 
+        //wrapper.style.background = 'linear-gradient(to bottom, '+ this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')'; 
 
         // planisphere 영역 생성
         const planisphereDiv = document.createElement('div');
@@ -250,9 +250,34 @@ class Planisphere{
             this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
         }
 
+        this.setStyles(styles, true);
+        // this.#render();
+        // this.#rotateCurrentDate(true);
+        // this.#resize();
+    }
+     /**
+     * 런타임 스타일 변경
+     * @param {Object} newStyles - Planisphere.defaultStyles, Planisphere.darkStyles, Planisphere.lightStyles 중 하나
+     */
+    setStyles(newStyles, isInit = false) {
+        // 현재 스타일을 교체
+        this.styles = Object.assign({}, this.styles, newStyles);
+
+        // 배경색 등 wrapper 스타일 업데이트
+        this.#parentDom.parentElement.style.background =
+            'linear-gradient(to bottom, ' + this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')';
+
+        // 패널 다시 그리기
+        this.skyPanel.clear();
+        this.topPanel.clear();
+        this.infoPanel.clear();
         this.#render();
-        this.#rotateCurrentDate(true);
-        this.#resize();
+        if(isInit){
+            this.#rotateCurrentDate(true);
+            this.#resize();
+        }else{
+            this.#applyTransform();
+        }
     }
     setDateTime(dateObj) {
         if (!(dateObj instanceof Date)) return;

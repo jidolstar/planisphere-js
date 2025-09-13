@@ -86,10 +86,10 @@
       
       <section>
         <h3>테마</h3>
-        <div class="ps-theme-options">
-          <button data-template="default">일반</button>
-          <button data-template="dark">다크</button>
-          <button data-template="light">화이트</button>
+        <div class="ps-theme-select">
+            <img src="images/theme_default.jpg" alt="기본 테마" data-theme="default">
+            <img src="images/theme_dark.jpg" alt="다크 테마" data-theme="dark">
+            <img src="images/theme_light.jpg" alt="라이트 테마" data-theme="light">
         </div>
       </section>
       
@@ -274,13 +274,16 @@ modalClose.addEventListener("click", () => {
 
 
 // 테마 변경
-document.querySelectorAll(".ps-theme-options button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const t = btn.dataset.template;
-    if (t === "dark") {
+document.querySelectorAll('.ps-theme-select img').forEach(img => {
+  img.addEventListener("click", () => {
+    document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
+    img.classList.add('active');
+
+    const theme = img.dataset.theme;
+    if (theme === "dark") {
       document.body.style.background="#000";
       planisphere.setStyles(Planisphere.darkStyles);
-    } else if (t === "light") {
+    } else if (theme === "light") {
       document.body.style.background="#fff";
       planisphere.setStyles(Planisphere.lightStyles);
     } else {
