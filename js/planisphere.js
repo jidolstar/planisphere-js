@@ -158,7 +158,8 @@ class Planisphere{
         lat = 37.57,
         dgmt = 9,
         styles = {},
-        isMobile = false
+        isMobile = false,
+        version = '1.0.0'
     }){
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
         this.limitDE = -70 * AstroMath.D2R
@@ -172,6 +173,7 @@ class Planisphere{
         this.styles = Object.assign({}, Planisphere.defaultStyles, styles);
 
         //좌표 관련 
+        this.version = version;
         this.width = 1000;
         this.height = 1000;
         this.centerX = this.width * 0.5;
@@ -801,8 +803,10 @@ class Planisphere{
             canvas.text(`${mag+2} 등성`).move(cx-270, cy - 180 + mag * 15)
                 .font({fill:this.styles.legendColor, size:this.styles.legendTextSize,family:'Inconsolata'})
         }
-        canvas.text(`아빠별 별자리판`).move(cx - 160, cy-270)
+        canvas.text(`아빠별 별자리판`).move(cx - 160, cy-290)
                 .font({fill:this.styles.legendColor, size:50,family:'Inconsolata'});
+        canvas.text(this.version).center(cx, cy - 200)
+                .font({fill:this.styles.legendColor, size:20,family:'Inconsolata'});
      
     }
     
