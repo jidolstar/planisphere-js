@@ -158,16 +158,40 @@ class Planisphere{
         }
 
         this.#render();
-        this.rotateCurrentDate();
+        this.#rotateCurrentDate(true);
         this.#resize();
     }
-    rotateCurrentDate(){
+    setDateTime(dateObj) {
+        if (!(dateObj instanceof Date)) return;
+
+        const Y = dateObj.getFullYear();
+        const M = dateObj.getMonth() + 1;
+        const D = dateObj.getDate();
+        const h = dateObj.getHours();
+        const m = dateObj.getMinutes();
+
+        const jd = AstroTime.jd(Y, M, D, h, m, 0);
+        let lst = this.astroTime.LCT2LST(jd);
+        //console.log('setDateTime:', dateObj, jd, lst);
+        if(this.lst == lst) return;
+        this.lst = lst;
+        this.#rotateCurrentDate(false);
+
+        // 연도 변경 시 날짜환 다시 그리기
+        // if (this._lastYear !== Y) {
+        //     this._lastYear = Y;
+        //     this.skyPanel.clear();
+        //     this.renderSkyPanel();
+        //     this.#applyTransform();
+        // }
+    }
+    #rotateCurrentDate(isInit = true) {
         //Local Sidereal Time 만큼 회전시켜준다.
         //즉, 남중해야할 별이 화면 아래로 향하게 한다.
         let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
         this.#lastRotation = rotation;
         this.#currentRotation = rotation;
-        this.#topPanelRotation = rotation;
+        if(isInit) this.#topPanelRotation = rotation;
         this.#applyTransform();
     }
     #applyTransform() {

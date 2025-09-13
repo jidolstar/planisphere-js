@@ -27,6 +27,45 @@ svg text{
    -ms-user-select: none;
    user-select: none;
 }
+/* wrapperDom: position:relative 이어야 함 */
+.ps-controls{
+    position:absolute; left:8px; right:8px; bottom:8px;
+    display:flex; flex-direction:column; gap:8px;
+    padding:10px; border-radius:12px;
+    background:rgba(0,0,0,.35); backdrop-filter: blur(6px);
+    color:#fff; font: 14px/1.4 system-ui, -apple-system, Roboto;
+    pointer-events:auto;
+}
+.ps-controls .row{ display:flex; gap:8px; flex-wrap:wrap; }
+.ps-controls input, .ps-controls button{
+  flex:1 1 auto; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08); color:#fff;
+}
+.ps-controls button{ cursor:pointer; }
+
+.ps-adjust-col {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  flex:1;
+  min-width:50px;
+  gap:4px;
+}
+.ps-adjust-label {
+  font-weight:600;
+  font-size:12px;
+}
+.ps-adjust-btn {
+  width:32px; height:28px;
+  line-height:1;
+  padding:0;
+  border-radius:6px;
+}
+.ps-adjust-btn.minus { background:rgba(255,0,0,.3); }
+.ps-adjust-btn.plus  { background:rgba(0,255,0,.3); }
+@media (min-width: 920px){
+  .ps-controls{ left:12px; right:auto; width:460px; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 <script src="astro.js"></script>
@@ -37,15 +76,142 @@ svg text{
 </head>
 <body>
 <div id="planisphere"></div>
+<div class="ps-controls" id="ps-controls">
+  <div class="row">
+    <input type="date" id="ps-date">
+    <input type="time" id="ps-time" step="60">
+  </div>
+  <div class="row">
+    <button id="ps-now">지금</button>
+    <button data-preset="21" class="ps-preset">오늘 21:00</button>
+    <button data-preset="0"  class="ps-preset">자정</button>
+  </div>
+  <!-- 날짜/시간 조정 버튼 그룹 -->
+  <div class="row">
+    <div class="ps-adjust-col">
+      <span class="ps-adjust-label">년</span>
+      <button class="ps-adjust-btn minus" id="year-minus">−</button>
+      <button class="ps-adjust-btn plus"  id="year-plus">＋</button>
+    </div>
+    <div class="ps-adjust-col">
+      <span class="ps-adjust-label">월</span>
+      <button class="ps-adjust-btn minus" id="month-minus">−</button>
+      <button class="ps-adjust-btn plus"  id="month-plus">＋</button>
+    </div>
+    <div class="ps-adjust-col">
+      <span class="ps-adjust-label">일</span>
+      <button class="ps-adjust-btn minus" id="day-minus">−</button>
+      <button class="ps-adjust-btn plus"  id="day-plus">＋</button>
+    </div>
+    <div class="ps-adjust-col">
+      <span class="ps-adjust-label">시</span>
+      <button class="ps-adjust-btn minus" id="hour-minus">−</button>
+      <button class="ps-adjust-btn plus"  id="hour-plus">＋</button>
+    </div>
+    <div class="ps-adjust-col">
+      <span class="ps-adjust-label">분</span>
+      <button class="ps-adjust-btn minus" id="minute-minus">−</button>
+      <button class="ps-adjust-btn plus"  id="minute-plus">＋</button>
+    </div>
+  </div>
+</div>
 <script>
-    const planisphere = new Planisphere({
-        wrapperDomId: '#planisphere',
-        currentDate: new Date(),
-        lon: 126.98,
-        lat: 37.57,
-        dgmt: 9,
-        styles: {}
+let planisphere = new Planisphere({
+    wrapperDomId: '#planisphere',
+    currentDate: new Date(),
+    lon: 126.98,
+    lat: 37.57,
+    dgmt: 9,
+    styles: {}
+});
+
+// --- DOM 요소 ---
+const $date = document.getElementById('ps-date');
+const $time = document.getElementById('ps-time');
+const $now  = document.getElementById('ps-now');
+
+// 공통: input값 → Date 변환
+function getDateFromInputs() {
+  if(!$date.value || !$time.value) return null;
+  return new Date(`${$date.value}T${$time.value}`);
+}
+
+// 초기값 현재 시간 반영
+const initNow = () => {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const Y = now.getFullYear();
+    const M = pad(now.getMonth()+1);
+    const D = pad(now.getDate());
+    const h = pad(now.getHours());
+    const m = pad(now.getMinutes());
+    $date.value = `${Y}-${M}-${D}`;
+    $time.value = `${h}:${m}`;
+    planisphere.setDateTime(now);
+};
+initNow();
+
+// input 변경 이벤트
+$date.addEventListener('change', ()=> {
+    const dt = getDateFromInputs();
+    if (dt) planisphere.setDateTime(dt);
+});
+$time.addEventListener('change', ()=> {
+    const dt = getDateFromInputs();
+    if (dt) planisphere.setDateTime(dt);
+});
+
+// "지금" 버튼
+$now.addEventListener('click', ()=> {
+    initNow();
+});
+
+// 프리셋 버튼들
+document.querySelectorAll('.ps-preset').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+        if(!$date.value) return;
+        const [Y,M,D] = $date.value.split('-').map(Number);
+        const h = Number(btn.dataset.preset);
+        const dt = new Date(Y, M-1, D, h, 0, 0);
+        const pad = n => String(n).padStart(2,'0');
+        $time.value = `${pad(h)}:00`;
+        planisphere.setDateTime(dt);
     });
+});
+
+// --- 증감 버튼 유틸 ---
+function adjust(unit, delta) {
+    const dt = getDateFromInputs();
+    if (!dt) return;
+    switch(unit){
+        case 'year':  dt.setFullYear(dt.getFullYear()+delta); break;
+        case 'month': dt.setMonth(dt.getMonth()+delta); break;
+        case 'day':   dt.setDate(dt.getDate()+delta); break;
+        case 'hour':  dt.setHours(dt.getHours()+delta); break;
+        case 'minute':dt.setMinutes(dt.getMinutes()+delta); break;
+    }
+    const pad = n => String(n).padStart(2,'0');
+    const Y = dt.getFullYear();
+    const M = pad(dt.getMonth()+1);
+    const D = pad(dt.getDate());
+    const h = pad(dt.getHours());
+    const m = pad(dt.getMinutes());
+    $date.value = `${Y}-${M}-${D}`;
+    $time.value = `${h}:${m}`;
+    planisphere.setDateTime(dt);
+}
+
+// 버튼 바인딩
+document.getElementById('year-minus').onclick   = ()=>adjust('year', -1);
+document.getElementById('year-plus').onclick    = ()=>adjust('year', +1);
+document.getElementById('month-minus').onclick  = ()=>adjust('month', -1);
+document.getElementById('month-plus').onclick   = ()=>adjust('month', +1);
+document.getElementById('day-minus').onclick    = ()=>adjust('day', -1);
+document.getElementById('day-plus').onclick     = ()=>adjust('day', +1);
+document.getElementById('hour-minus').onclick   = ()=>adjust('hour', -1);
+document.getElementById('hour-plus').onclick    = ()=>adjust('hour', +1);
+document.getElementById('minute-minus').onclick = ()=>adjust('minute', -1);
+document.getElementById('minute-plus').onclick  = ()=>adjust('minute', +1);
 </script>
 </body>
 </html>
