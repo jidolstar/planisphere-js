@@ -395,9 +395,8 @@ class Planisphere{
         this.#scale = next;
         this.#applyTransform();
     }
-
     #touchStartMobile(e) {
-        e.preventDefault(); // 스크롤/바운스 방지
+        e.preventDefault();
         if (this.#dragging) return;
         this.#dragging = true;
 
@@ -406,17 +405,20 @@ class Planisphere{
         this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
 
         if (e.touches.length === 1) {
-            // 1손가락=회전
+            // 1손가락 = 회전
             this.#panning = false;
             const t = e.touches[0];
             this.#dragDownX = t.pageX - this.#screenCenterX;
             this.#dragDownY = t.pageY - this.#screenCenterY;
-        } else if (e.touches.length >= 2) {
-            // 2손가락=이동
+        } else if (e.touches.length === 2) {
+            // 2손가락 = 이동 + 확대/축소
             this.#panning = true;
-            const t = e.touches[0];
-            this.#panStartX = t.pageX;
-            this.#panStartY = t.pageY;
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            this.#panStartX = (t1.pageX + t2.pageX) / 2;
+            this.#panStartY = (t1.pageY + t2.pageY) / 2;
+            this._lastDistance = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+            this._startScale = this.#scale;
             this.#currentRotation = this.#lastRotation; // 회전 고정
         }
     }
@@ -424,13 +426,25 @@ class Planisphere{
         e.preventDefault();
         if (!this.#dragging) return;
 
-        if (this.#panning && e.touches.length >= 1) {
+        if (this.#panning && e.touches.length === 2) {
+            // 이동 + 확대/축소
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const centerX = (t1.pageX + t2.pageX) / 2;
+            const centerY = (t1.pageY + t2.pageY) / 2;
+
             // 이동(pan)
-            const t = e.touches[0];
-            this.#panX += t.pageX - this.#panStartX;
-            this.#panY += t.pageY - this.#panStartY;
-            this.#panStartX = t.pageX;
-            this.#panStartY = t.pageY;
+            this.#panX += centerX - this.#panStartX;
+            this.#panY += centerY - this.#panStartY;
+            this.#panStartX = centerX;
+            this.#panStartY = centerY;
+
+            // 확대/축소(scale)
+            const newDist = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+            const scaleFactor = newDist / this._lastDistance;
+            let next = this._startScale * scaleFactor;
+            next = Math.max(this.#minScale, Math.min(this.#maxScale, next));
+            this.#scale = next;
         } else if (!this.#panning && e.touches.length === 1) {
             // 회전
             const t = e.touches[0];
@@ -439,6 +453,7 @@ class Planisphere{
             const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
             this.#currentRotation = this.#lastRotation + deltaR;
         }
+
         this.#applyTransform();
     }
     #touchEndMobile(e) {
