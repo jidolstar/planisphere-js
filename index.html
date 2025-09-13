@@ -89,7 +89,7 @@
         <div class="ps-theme-options">
           <button data-template="default">일반</button>
           <button data-template="dark">다크</button>
-          <button data-template="white">화이트</button>
+          <button data-template="light">화이트</button>
         </div>
       </section>
       
@@ -279,13 +279,13 @@ document.querySelectorAll(".ps-theme-options button").forEach(btn => {
     const t = btn.dataset.template;
     if (t === "dark") {
       document.body.style.background="#000";
-      planisphere.setStyles({ bgColor:"#000", raLineColor:"#666", raTextColor:"#fff" });
-    } else if (t === "white") {
+      planisphere.setStyles(Planisphere.darkStyles);
+    } else if (t === "light") {
       document.body.style.background="#fff";
-      planisphere.setStyles({ bgColor:"#fff", raLineColor:"#000", raTextColor:"#000" });
+      planisphere.setStyles(Planisphere.lightStyles);
     } else {
       document.body.style.background="#777";
-      planisphere.setStyles({}); // 기본
+      planisphere.setStyles(Planisphere.defaultStyles);
     }
   });
 });
