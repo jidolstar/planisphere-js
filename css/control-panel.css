@@ -62,6 +62,7 @@
   .ps-controls {
     width: 540px;
     left:50%;
+    bottom:12px;
     transform:translateX(-50%);
   }
 }
