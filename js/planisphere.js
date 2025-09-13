@@ -638,7 +638,7 @@ class Planisphere{
             const {x, y} = this.proj.project(dataConNameList[i], dataConNameList[i+1]);
             //console.log(`${name} ${x} ${y}`)
             if(Math.sqrt(x*x+y*y) < this.proj.screenRadius - 30){
-                canvas.text(name).move(cx + x, cy + y)
+                canvas.text(name).center(cx + x, cy + y)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
                 .font({fill:this.styles.conNameTextColor,size:this.styles.conNameTextSize,family:'Inconsolata',opacity:0.8});
             }
