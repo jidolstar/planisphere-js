@@ -300,6 +300,15 @@ settingsBtn.addEventListener("click",  () => {
 modalClose.addEventListener("click", () => {
   modal.style.display = "none";
 });
+// ESC 키로 닫기
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (modal.style.display === "block" || modal.classList.contains("open")) {
+      modal.style.display = "none";
+      modal.classList.remove("open"); // open 클래스를 쓰는 경우 대비
+    }
+  }
+});
 
 // 페이지 로드시 첫 방문 확인
 window.addEventListener("DOMContentLoaded", () => {
