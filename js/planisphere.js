@@ -209,6 +209,7 @@ class Planisphere{
         planisphereDiv.style.left = '50%';
         planisphereDiv.style.top = '50%';
         planisphereDiv.style.transform = 'translate(-50%, -50%)';
+        planisphereDiv.style.touchAction = 'none';
         wrapper.appendChild(planisphereDiv);
 
         //부모 Dom
@@ -219,18 +220,21 @@ class Planisphere{
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
+        this.skyPanel.node.style.touchAction  = 'none';
 
         //Top
         this.topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
+        this.topPanel.node.style.touchAction  = 'none';
 
         //Info
         this.infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
+        this.infoPanel.node.style.touchAction = 'none';
 
         // 기존 addEventListener 블록 교체
         if (isMobile) {
@@ -395,57 +399,57 @@ class Planisphere{
         this.#scale = next;
         this.#applyTransform();
     }
-    #touchStartMobile(e) {
+    #_dist(t1, t2){ 
+        return Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY); 
+    }
+    #touchStartMobile(e){
         e.preventDefault();
-        if (this.#dragging) return;
-        this.#dragging = true;
-
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
         this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
+        console.log('e.touches.length:', e.touches.length);
 
-        if (e.touches.length === 1) {
-            // 1손가락 = 회전
-            this.#panning = false;
+        if (e.touches.length === 1){
+            this.#dragging = true;
+            this.#panning  = false; // 회전 모드
             const t = e.touches[0];
             this.#dragDownX = t.pageX - this.#screenCenterX;
             this.#dragDownY = t.pageY - this.#screenCenterY;
-        } else if (e.touches.length === 2) {
-            // 2손가락 = 이동 + 확대/축소
-            this.#panning = true;
-            const t1 = e.touches[0];
-            const t2 = e.touches[1];
-            this.#panStartX = (t1.pageX + t2.pageX) / 2;
-            this.#panStartY = (t1.pageY + t2.pageY) / 2;
-            this._lastDistance = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
-            this._startScale = this.#scale;
-            this.#currentRotation = this.#lastRotation; // 회전 고정
+        } else if (e.touches.length === 2){
+            this.#dragging = true;
+            this.#panning  = true;  // pan+pinch 모드
+            const [t1, t2] = [e.touches[0], e.touches[1]];
+            this._pinchStartCenterX = (t1.pageX + t2.pageX) / 2;
+            this._pinchStartCenterY = (t1.pageY + t2.pageY) / 2;
+            this._pinchPrevCenterX  = this._pinchStartCenterX;
+            this._pinchPrevCenterY  = this._pinchStartCenterY;
+            this._pinchStartDist    = this.#_dist(t1, t2);
+            this._pinchStartScale   = this.#scale;
+            this.#currentRotation   = this.#lastRotation; // 회전 고정
         }
-    }
-    #touchMoveMobile(e) {
+        }
+
+    #touchMoveMobile(e){
         e.preventDefault();
         if (!this.#dragging) return;
 
-        if (this.#panning && e.touches.length === 2) {
-            // 이동 + 확대/축소
-            const t1 = e.touches[0];
-            const t2 = e.touches[1];
+        if (e.touches.length === 2 && this.#panning){
+            const [t1, t2] = [e.touches[0], e.touches[1]];
             const centerX = (t1.pageX + t2.pageX) / 2;
             const centerY = (t1.pageY + t2.pageY) / 2;
 
-            // 이동(pan)
-            this.#panX += centerX - this.#panStartX;
-            this.#panY += centerY - this.#panStartY;
-            this.#panStartX = centerX;
-            this.#panStartY = centerY;
+            // pan: 중심점 이동 누적
+            this.#panX += centerX - this._pinchPrevCenterX;
+            this.#panY += centerY - this._pinchPrevCenterY;
+            this._pinchPrevCenterX = centerX;
+            this._pinchPrevCenterY = centerY;
 
-            // 확대/축소(scale)
-            const newDist = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
-            const scaleFactor = newDist / this._lastDistance;
-            let next = this._startScale * scaleFactor;
-            next = Math.max(this.#minScale, Math.min(this.#maxScale, next));
-            this.#scale = next;
-        } else if (!this.#panning && e.touches.length === 1) {
+            // scale: 시작 거리 대비 현재 거리
+            const dist = this.#_dist(t1, t2);
+            let next = this._pinchStartScale * (dist / this._pinchStartDist);
+            this.#scale = Math.max(this.#minScale, Math.min(this.#maxScale, next));
+
+        } else if (e.touches.length === 1 && !this.#panning){
             // 회전
             const t = e.touches[0];
             const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
@@ -455,14 +459,26 @@ class Planisphere{
         }
 
         this.#applyTransform();
-    }
-    #touchEndMobile(e) {
+        }
+
+        #touchEndMobile(e){
         e.preventDefault();
-        if (!this.#dragging) return;
-        if (!this.#panning) this.#lastRotation = this.#currentRotation;
-        this.#dragging = false;
-        this.#panning  = false;
-    }
+
+        if (e.touches.length === 1){
+            // 2→1 손가락 전환: 회전 모드로 전환하면서 끊김 없이 계속
+            this.#panning = false;
+            const t = e.touches[0];
+            this.#dragDownX = t.pageX - this.#screenCenterX;
+            this.#dragDownY = t.pageY - this.#screenCenterY;
+            return;
+        }
+
+        if (e.touches.length === 0){
+            if (!this.#panning) this.#lastRotation = this.#currentRotation;
+            this.#dragging = false;
+            this.#panning  = false;
+        }
+        }
     #render(){
         this.#renderSkyPanel();
         this.#renderTopPanel();
