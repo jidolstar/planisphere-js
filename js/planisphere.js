@@ -295,10 +295,7 @@ class Planisphere{
         const m = dateObj.getMinutes();
 
         const jd = AstroTime.jd(Y, M, D, h, m, 0);
-        let lst = this.astroTime.LCT2LST(jd);
-        //console.log('setDateTime:', dateObj, jd, lst);
-        if(this.lst == lst) return;
-        this.lst = lst;
+        this.lst = this.astroTime.LCT2LST(jd);
         this.#rotateCurrentDate(false);
 
         // 연도 변경 시 날짜환 다시 그리기
