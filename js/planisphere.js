@@ -407,8 +407,6 @@ class Planisphere{
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
         this.#screenCenterY = rect.top  + rect.height* 0.5 + this.#panY;
-        //console.log('e.touches.length:', e.touches.length);
-
         if (e.touches.length === 1){
             this.#dragging = true;
             this.#panning  = false; // 회전 모드
@@ -427,7 +425,7 @@ class Planisphere{
             this._pinchStartScale   = this.#scale;
             this.#currentRotation   = this.#lastRotation; // 회전 고정
         }
-        }
+    }
 
     #touchMoveMobile(e){
         e.preventDefault();
@@ -503,17 +501,17 @@ class Planisphere{
 
         //날짜 월 표시 
         for(let month = 1; month <= 12; month++){
-            const midDay= AstroTime.monthMidDay(year, month);  // 윤년 포함, 월별 정확한 중간일
+            const midDay= AstroTime.monthMidDay(year, month) + 1;  // 윤년 포함, 월별 정확한 중간일
             const hour = this.astroTime.hourForDateRing(year, month, midDay);
             const lct = AstroTime.jd(year, month, midDay, hour, 0, 0);
 			const lst = this.astroTime.LCT2LST(lct);
             const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
             let {x, y} = this.proj.project(ra + dailyStep / 2, this.limitDE);
             let t = Math.atan2(y,x);
-            let r = this.radius+38;
+            let r = this.radius + 30;
             x = r * Math.cos(t);
             y = r * Math.sin(t);
-            canvas.text(`${month}월`).move(cx + x - 12, cy + y - 13)
+            canvas.text(`${month}월`).attr('text-anchor', 'middle').center(cx + x, cy + y)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
                 .font({fill:this.styles.dateColor, size:this.styles.dateMonthTextSize,
                     family:'Inconsolata',opacity:0.8});
@@ -562,12 +560,10 @@ class Planisphere{
                 let r2 = r1 + 2;
                 if (dayOfMonth !== 1) {
                     if (dayOfMonth % 10 === 0) {
-                        const x2txt = (r1 + 9) * Math.cos(t - 0.4 * AstroMath.D2R);
-                        const y2txt = (r1 + 9) * Math.sin(t - 0.4 * AstroMath.D2R);
-                        canvas.text(`${dayOfMonth}`)
-                        .move(cx + x2txt - 7, cy + y2txt - 3.5)
-                        .transform({ origin:[cx + x2txt, cy + y2txt],
-                                    rotate: AstroMath.R2D * (Math.atan2(y2txt, x2txt) - AstroMath.HPI) })
+                        const x2txt = (r1 + 9) * Math.cos(t - 0.05 * AstroMath.D2R);
+                        const y2txt = (r1 + 9) * Math.sin(t - 0.05 * AstroMath.D2R);
+                        canvas.text(`${dayOfMonth}`).attr('text-anchor', 'middle').center(cx + x2txt, cy + y2txt)
+                        .transform({rotate: AstroMath.R2D * (Math.atan2(y2txt, x2txt) - AstroMath.HPI) })
                         .font({ fill: this.styles.dateColor, size: this.styles.dateDayTextSize, family: 'Inconsolata', opacity: 0.8 });
                         r2 = r1 + 6;
                     } else if (dayOfMonth % 5 === 0) {
@@ -606,7 +602,7 @@ class Planisphere{
         //적경값 
         for(let ra=0; ra < 24; ra = ra + this.intervalRA){
             const {x, y} = this.proj.project(ra * AstroMath.H2R, -3 * AstroMath.D2R);
-            canvas.text(`${ra}h`).move(cx + x - 6, cy + y - 6)
+            canvas.text(`${ra}h`).attr('text-anchor', 'middle').center(cx + x, cy + y)
                 .font({fill:this.styles.raTextColor, size:this.styles.raTextSize,family:'Inconsolata'})
                 .transform({
                     rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)
@@ -616,7 +612,7 @@ class Planisphere{
         //적위선 
         for(let dec = -90.0; dec < 90.0; dec += this.intervalDE){
             const {x, y} = this.proj.project(0, dec * AstroMath.D2R);
-            if(Math.sqrt(x*x,y*y) < this.proj.screenRadius){
+            if(Math.hypot(x,y) < this.proj.screenRadius){
                 let color = this.styles.decLineColor1
                 let opacity = 0.4;
                 if(Math.abs(dec) < 0.00001){ //천구의 적도이면
@@ -632,7 +628,7 @@ class Planisphere{
         for(let i=0; i < dataConLineList.length; i+=4){
             const {x:x1, y:y1} = this.proj.project(dataConLineList[i], dataConLineList[i+1]);
             const {x:x2, y:y2}  = this.proj.project(dataConLineList[i+2], dataConLineList[i+3]);
-            if(Math.sqrt(x1*x1+y1*y1) < this.proj.screenRadius && Math.sqrt(x2*x2+y2*y2) < this.proj.screenRadius){
+            if(Math.hypot(x1,y1) < this.proj.screenRadius && Math.hypot(x2,y2) < this.proj.screenRadius){
                 path += `M${cx+x1} ${cy+y1} L${cx+x2} ${cy+y2} `;
             }
         }
@@ -646,7 +642,7 @@ class Planisphere{
             let ra = star[2];
             let dec = star[3];
             const {x, y} = this.proj.project(ra * AstroMath.H2R, dec * AstroMath.D2R);
-            if(Math.sqrt(x*x+y*y) < this.proj.screenRadius){
+            if(Math.hypot(x, y) < this.proj.screenRadius){
                 let mag = star[4];
                 let type = star[5];
                 let radius = 0.5;
@@ -667,9 +663,8 @@ class Planisphere{
         for(let i=0; i < dataConNameList.length; i+=3){
             const name = dataConNameList[i+2];
             const {x, y} = this.proj.project(dataConNameList[i], dataConNameList[i+1]);
-            //console.log(`${name} ${x} ${y}`)
-            if(Math.sqrt(x*x+y*y) < this.proj.screenRadius - 30){
-                canvas.text(name).center(cx + x, cy + y)
+            if(Math.hypot(x, y) < this.proj.screenRadius - 30){
+                canvas.text(name).attr('text-anchor', 'middle').center(cx + x, cy + y)
                 .transform({rotate:AstroMath.R2D * (Math.atan2(y, x)-AstroMath.HPI)})
                 .font({fill:this.styles.conNameTextColor,size:this.styles.conNameTextSize,family:'Inconsolata',opacity:0.8});
             }
@@ -719,16 +714,9 @@ class Planisphere{
             const ra2 = this.equVector.lon();	
 			const dec2 = this.equVector.lat(); 
             const {x:x2, y:y2} = this.proj.project(ra2, dec2);
-            //canvas.line(cx + x1, cx + y1 , cx + x2 , cy + y2).stroke({width:1,color:'#f00'});
-            
-            let dx = 0, dy = 5; 
-            if(name.length == 1) dx = 5; else dx = 10;
-            canvas.text(`${arrayAzimuthName[i]}`).move(cx + x1 - dx, cy + y1 - dy)
+            canvas.text(`${arrayAzimuthName[i]}`).attr('text-anchor', 'middle').center(cx + x1, cy + y1)
                 .font({fill:this.styles.nwesColor, size:this.styles.nwesTextSize,family:'Inconsolata'})
-                .transform({
-                    origin:[cx + x1, + cy  + y1],
-                    rotate:AstroMath.R2D * (Math.atan2(y1-y2, x1-x2)-AstroMath.HPI)
-                })
+                .transform({rotate:AstroMath.R2D * (Math.atan2(y1-y2, x1-x2)-AstroMath.HPI)})
 
             azimuth+=45;
         }
@@ -747,15 +735,12 @@ class Planisphere{
             const y2 = (this.radius - 9) * sin_lon;
             path += `M${x1 + cx} ${y1 + cy} L${x2 + cx} ${y2 + cy} `;
 
-            const x3 = (this.radius - 16) * cos_lon;
-            const y3 = (this.radius - 16) * sin_lon;
-            //canvas.line(0, 0, cx + x2, + cy  + y2).stroke({width:1,color:'#f00'});
-            canvas.text(`${hour}시`).move(cx + x3 - 9, cy + y3 - 6)
+            const x3 = (this.radius - 18) * cos_lon;
+            const y3 = (this.radius - 18) * sin_lon;
+
+            canvas.text(`${hour}시`).attr('text-anchor', 'middle').center(cx + x3, cy + y3)
                 .font({fill:this.styles.timeTextColor, size:this.styles.timeTextSize,family:'Inconsolata'})
-                .transform({
-                    origin:[cx + x3, + cy  + y3],
-                    rotate:AstroMath.R2D * (Math.atan2(y3, x3)-AstroMath.HPI-AstroMath.PI)
-                });
+                .transform({rotate:AstroMath.R2D * (Math.atan2(y3, x3)-AstroMath.HPI-AstroMath.PI)});
             for(let min = 5; min < 60; min+=5){
                 const t = -(-this.equVector.lon() - this.deltaCulminationTime + (hour + (min/60)) *AstroMath.H2R + AstroMath.PI);
                 const cos_lon = Math.cos(t);
