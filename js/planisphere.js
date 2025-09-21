@@ -131,6 +131,7 @@ class Planisphere{
     #parentDom;
 
     //마우스로 별자리판 회전하기 위해 사용하는 속성 
+    #pointers = new Map(); // 현재 활성화된 포인터들 (Pointer Events용)
     #dragging = false;
     #dragDownX = 0;
     #dragDownY = 0;
@@ -158,7 +159,6 @@ class Planisphere{
         lat = 37.57,
         dgmt = 9,
         styles = {},
-        isMobile = false,
         version = '1.0.0'
     }){
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
@@ -238,28 +238,48 @@ class Planisphere{
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
         this.infoPanel.node.style.touchAction = 'none';
 
-        // 기존 addEventListener 블록 교체
-        if (isMobile) {
-            // 모바일 → 터치 전용
-            this.#parentDom.addEventListener('touchstart', this.#touchStartMobile.bind(this), { capture: true, passive: false });
-            this.#parentDom.addEventListener('touchmove',  this.#touchMoveMobile.bind(this),  { capture: true, passive: false });
-            this.#parentDom.addEventListener('touchend',   this.#touchEndMobile.bind(this),   { capture: true, passive: false });
-            this.#parentDom.addEventListener('touchcancel',this.#touchEndMobile.bind(this),   { capture: true, passive: false });
+        if ('onpointerdown' in window) {
+            // 내부 제스처만 쓰도록 충돌 방지
+            this.#parentDom.style.touchAction = 'none';
+            this.#parentDom.addEventListener('pointerdown',  this.#onPointerDown.bind(this),  { passive:false });
+            this.#parentDom.addEventListener('pointermove',  this.#onPointerMove.bind(this),  { passive:false });
+            this.#parentDom.addEventListener('pointerup',    this.#onPointerUp.bind(this),    { passive:false });
+            this.#parentDom.addEventListener('pointercancel',this.#onPointerUp.bind(this),    { passive:false });
+            this.#parentDom.addEventListener('pointerleave', this.#onPointerUp.bind(this),    { passive:false });
+        } else if ('ontouchstart' in window) {
+            // 레거시 터치 폴백 (최신 브라우저만 목표라면 생략 가능)
+            this.#parentDom.addEventListener('touchstart', this.#onTouchStart.bind(this), { capture:true, passive:false });
+            this.#parentDom.addEventListener('touchmove',  this.#onTouchMove.bind(this),  { capture:true, passive:false });
+            this.#parentDom.addEventListener('touchend',   this.#onTouchEnd.bind(this),   { capture:true, passive:false });
+            this.#parentDom.addEventListener('touchcancel',this.#onTouchEnd.bind(this),   { capture:true, passive:false });
         } else {
-            // PC → 마우스 전용
-            this.#parentDom.addEventListener('mousedown', this.#mouseDown.bind(this));
-            this.#parentDom.addEventListener('mousemove', this.#mouseMove.bind(this));
-            this.#parentDom.addEventListener('mouseup',   this.#mouseUp.bind(this));
-            this.#parentDom.addEventListener('mouseleave',this.#mouseUp.bind(this));
-            this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive: false });
-            // 우클릭 드래그 pan 지원 시 컨텍스트 메뉴 방지(선택)
-            this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
+            // 레거시 마우스 폴백
+            this.#parentDom.addEventListener('mousedown', this.#onMouseDown.bind(this));
+            this.#parentDom.addEventListener('mousemove', this.#onMouseMove.bind(this));
+            this.#parentDom.addEventListener('mouseup',   this.#onMouseUp.bind(this));
+            this.#parentDom.addEventListener('mouseleave',this.#onMouseUp.bind(this));
         }
 
+        // (보조) 데스크톱용 휠 줌 — PC/맥 데스크톱 브라우저에서만 보조 입력으로 사용
+        // iOS/iPadOS Safari에선 wheel이 안 오니 문제 없음
+        if ('onwheel' in this.#parentDom) {
+            this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive:false });
+        }
+
+        // macOS Safari 트랙패드 핀치 폴백: Safari 전용 gesture 이벤트 (페이지 줌 대신 내부 줌)
+        // 최신 사파리에서만 의미 있음. iOS Safari도 일부 상황에서 발생.
+        const ua = navigator.userAgent;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
+        if (isSafari) {
+            this.#parentDom.addEventListener('gesturestart',  this.#onGestureStart.bind(this),  { passive:false });
+            this.#parentDom.addEventListener('gesturechange', this.#onGestureChange.bind(this), { passive:false });
+            this.#parentDom.addEventListener('gestureend',    this.#onGestureEnd.bind(this),    { passive:false });
+        }
+
+        // 우클릭 메뉴 방지(드래그 중 문맥메뉴 뜨는 것 방지)
+        this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
+
         this.setStyles(styles, true);
-        // this.#render();
-        // this.#rotateCurrentDate(true);
-        // this.#resize();
     }
      /**
      * 런타임 스타일 변경
@@ -348,7 +368,7 @@ class Planisphere{
         this.#parentDom.style.width = (size * scale) + 'px';
         this.#parentDom.style.height = (size * scale) + 'px';
     }
-    #mouseDown(e) {
+    #onMouseDown(e) {
         this.#dragging = true;
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
@@ -367,7 +387,7 @@ class Planisphere{
             this.#dragDownY = e.pageY - this.#screenCenterY;
         }
     }
-    #mouseMove(e) {
+    #onMouseMove(e) {
         if (!this.#dragging) return;
         if (this.#panning) {
             // 이동(pan)
@@ -384,25 +404,23 @@ class Planisphere{
         }
         this.#applyTransform();
     }
-    #mouseUp(e) {
+    #onMouseUp(e) {
         if (!this.#dragging) return;
         if (!this.#panning) this.#lastRotation = this.#currentRotation;
         this.#dragging = false;
         this.#panning  = false;
     }
-    #onWheel(e) {
-        e.preventDefault(); // 스크롤 방지
-        const k = 0.001;    // 감도
-        const factor = Math.exp(-e.deltaY * k);
-        let next = this.#scale * factor;
-        next = Math.max(this.#minScale, Math.min(this.#maxScale, next));
-        this.#scale = next;
+    #onWheel(e){
+        e.preventDefault();
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        const next   = this.#scale * factor;
+        this.#scale  = Math.max(this.#minScale, Math.min(this.#maxScale, next));
         this.#applyTransform();
     }
     #_dist(t1, t2){ 
         return Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY); 
     }
-    #touchStartMobile(e){
+    #onTouchStart(e){
         e.preventDefault();
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
@@ -426,8 +444,7 @@ class Planisphere{
             this.#currentRotation   = this.#lastRotation; // 회전 고정
         }
     }
-
-    #touchMoveMobile(e){
+    #onTouchMove(e){
         e.preventDefault();
         if (!this.#dragging) return;
 
@@ -455,11 +472,9 @@ class Planisphere{
             const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
             this.#currentRotation = this.#lastRotation + deltaR;
         }
-
         this.#applyTransform();
     }
-
-    #touchEndMobile(e){
+    #onTouchEnd(e){
         e.preventDefault();
 
         if (e.touches.length === 1){
@@ -476,6 +491,113 @@ class Planisphere{
             this.#dragging = false;
             this.#panning  = false;
         }
+    }
+    // === Pointer Events ===
+    #onPointerDown(e){
+        e.preventDefault();
+        this.#parentDom.setPointerCapture?.(e.pointerId);
+        this.#pointers.set(e.pointerId, { x:e.pageX, y:e.pageY });
+
+        const rect = this.#parentDom.getBoundingClientRect();
+        this.#screenCenterX = rect.left + rect.width  * 0.5 + this.#panX;
+        this.#screenCenterY = rect.top  + rect.height * 0.5 + this.#panY;
+
+        const isMouse  = e.pointerType === 'mouse';
+        // 오른쪽버튼(2) / 휠버튼(4) 또는 보조키(Shift/Alt/Ctrl/Meta)로 '팬' 의도
+        const wantPan  = isMouse && ( (e.buttons & 2) || (e.buttons & 4) || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey );
+
+        if (this.#pointers.size === 1){
+            if (wantPan){
+            // 1포인터 팬(데스크톱 전용 제스처)
+            this.#dragging = false;
+            this.#panning  = true;
+            this._panPrevX = e.pageX;
+            this._panPrevY = e.pageY;
+            } else {
+            // 1포인터 회전(기본)
+            this.#dragging = true;
+            this.#panning  = false;
+            this.#dragDownX = e.pageX - this.#screenCenterX;
+            this.#dragDownY = e.pageY - this.#screenCenterY;
+            }
+        } else if (this.#pointers.size === 2){
+            // 2포인터 → 팬 + 핀치줌(모바일/트랙패드 공통)
+            const pts = Array.from(this.#pointers.values());
+            this._pinchPrevCenterX = (pts[0].x + pts[1].x) / 2;
+            this._pinchPrevCenterY = (pts[0].y + pts[1].y) / 2;
+            this._pinchStartDist   = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            this._pinchStartScale  = this.#scale;
+            this.#currentRotation  = this.#lastRotation;
+            this.#panning = true;
+        }
+    }
+
+    #onPointerMove(e){
+        if (!this.#pointers.has(e.pointerId)) return;
+        e.preventDefault();
+        this.#pointers.set(e.pointerId, { x:e.pageX, y:e.pageY });
+
+        if (this.#pointers.size === 2 && this.#panning){
+            // 2포인터 팬
+            const pts = Array.from(this.#pointers.values());
+            const cx = (pts[0].x + pts[1].x) / 2;
+            const cy = (pts[0].y + pts[1].y) / 2;
+            this.#panX += cx - this._pinchPrevCenterX;
+            this.#panY += cy - this._pinchPrevCenterY;
+            this._pinchPrevCenterX = cx;
+            this._pinchPrevCenterY = cy;
+
+            // 핀치줌
+            const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            let next = this._pinchStartScale * (dist / this._pinchStartDist);
+            this.#scale = Math.max(this.#minScale, Math.min(this.#maxScale, next));
+        } else if (this.#pointers.size === 1 && this.#panning){
+            // 1포인터 팬(데스크톱)
+            this.#panX += e.pageX - this._panPrevX;
+            this.#panY += e.pageY - this._panPrevY;
+            this._panPrevX = e.pageX;
+            this._panPrevY = e.pageY;
+        } else if (this.#pointers.size === 1 && this.#dragging && !this.#panning){
+            // 1포인터 회전
+            const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
+            const r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
+            const deltaR = (r2 - r1);
+            this.#currentRotation = this.#lastRotation + (deltaR * 180 / Math.PI);
+        }
+        this.#applyTransform();
+    }
+    #onPointerUp(e){
+        e.preventDefault();
+        this.#pointers.delete(e.pointerId);
+
+        if (this.#pointers.size === 0){
+            if (!this.#panning) this.#lastRotation = this.#currentRotation;
+            this.#dragging = false;
+            this.#panning  = false;
+        } else if (this.#pointers.size === 1){
+            // 2→1 전환 시 회전으로 자연 전환
+            const [t] = this.#pointers.values();
+            this.#panning = false;
+            this.#dragging = true;
+            this.#dragDownX = t.x - this.#screenCenterX;
+            this.#dragDownY = t.y - this.#screenCenterY;
+        }
+    }
+    // === Safari 전용 gesture 폴백 (macOS 트랙패드 핀치 등) ===
+    #onGestureStart(e){
+        // 이걸 막지 않으면 페이지 전체가 줌됨
+        e.preventDefault();
+        this._gestureStartScale = this.#scale;
+    }
+    #onGestureChange(e){
+        e.preventDefault();
+        // e.scale: 1.0을 중심으로 핀치 비율 제공
+        let next = this._gestureStartScale * e.scale;
+        this.#scale = Math.max(this.#minScale, Math.min(this.#maxScale, next));
+        this.#applyTransform();
+    }
+    #onGestureEnd(e){
+        e.preventDefault(); // 특별히 할 건 없음
     }
     #render(){
         this.#renderSkyPanel();

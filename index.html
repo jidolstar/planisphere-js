@@ -119,7 +119,7 @@
 </div>
 
 <script>
-const version = '1.0.2';
+const version = '1.0.3';
 const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
 
 // 저장된 테마 불러오기
@@ -143,7 +143,6 @@ let planisphere = new Planisphere({
     lat: 37.57,
     dgmt: 9,
     styles: initialStyles,
-    isMobile: isMobile,
     version: version
 });
 
@@ -260,25 +259,20 @@ const modal = document.getElementById("ps-modal");
 const modalClose = document.getElementById("ps-modal-close");
 const settingsBtn = document.getElementById("ps-settings");
 const usageDiv = document.getElementById("ps-usage");
-if (isMobile) {
-    usageDiv.innerHTML = `
-      <p>📱 스마트폰</p>
-      <ul>
-        <li>회전: 한 손가락 드래그</li>
-        <li>이동: 두 손가락 드래그</li>
-        <li>확대/축소: 핀치 제스처</li>
-      </ul>
-    `;
-  } else {
-    usageDiv.innerHTML = `
-      <p>💻 PC</p>
-      <ul>
-        <li>회전: 마우스 드래그</li>
-        <li>이동: 마우스 오른쪽 버튼 드래그</li>
-        <li>확대/축소: 마우스 휠</li>
-      </ul>
-    `;
-  }
+usageDiv.innerHTML = `
+  <p>📱 스마트폰</p>
+  <ul>
+    <li>회전: 한 손가락 드래그</li>
+    <li>이동: 두 손가락 드래그</li>
+    <li>확대/축소: 핀치 제스처</li>
+  </ul>
+  <p>💻 PC</p>
+  <ul>
+    <li>회전: 마우스 드래그</li>
+    <li>이동: 마우스 오른쪽 버튼 드래그</li>
+    <li>확대/축소: 마우스 휠</li>
+  </ul>
+`;
 
 function openSettingsModal(showWelcome = false) {
   modal.style.display = "flex";    
