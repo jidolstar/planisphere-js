@@ -167,33 +167,39 @@ class InputHandler {
     #setupEventListeners() {
         if ('onpointerdown' in window) {
             this.#parentDom.style.touchAction = 'none';
-            this.#parentDom.addEventListener('pointerdown',  this.#onPointerDown.bind(this),  { passive:false });
-            this.#parentDom.addEventListener('pointermove',  this.#onPointerMove.bind(this),  { passive:false });
-            this.#parentDom.addEventListener('pointerup',    this.#onPointerUp.bind(this),    { passive:false });
-            this.#parentDom.addEventListener('pointercancel',this.#onPointerUp.bind(this),    { passive:false });
-            this.#parentDom.addEventListener('pointerleave', this.#onPointerUp.bind(this),    { passive:false });
+            this.#parentDom.addEventListener('pointerdown', this.#onPointerDown.bind(this), { passive: false });
+            this.#parentDom.addEventListener('pointermove', this.#onPointerMove.bind(this), { passive: false });
+            this.#parentDom.addEventListener('pointerup', this.#onPointerUp.bind(this), { passive: false });
+            this.#parentDom.addEventListener('pointercancel', this.#onPointerUp.bind(this), { passive: false });
+            this.#parentDom.addEventListener('pointerleave', this.#onPointerUp.bind(this), { passive: false });
         } else if ('ontouchstart' in window) {
-            this.#parentDom.addEventListener('touchstart', this.#onTouchStart.bind(this), { capture:true, passive:false });
-            this.#parentDom.addEventListener('touchmove',  this.#onTouchMove.bind(this),  { capture:true, passive:false });
-            this.#parentDom.addEventListener('touchend',   this.#onTouchEnd.bind(this),   { capture:true, passive:false });
-            this.#parentDom.addEventListener('touchcancel',this.#onTouchEnd.bind(this),   { capture:true, passive:false });
+            this.#parentDom.addEventListener('touchstart', this.#onTouchStart.bind(this), { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchmove', this.#onTouchMove.bind(this), { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchend', this.#onTouchEnd.bind(this), { capture: true, passive: false });
+            this.#parentDom.addEventListener('touchcancel', this.#onTouchEnd.bind(this), { capture: true, passive: false });
         } else {
             this.#parentDom.addEventListener('mousedown', this.#onMouseDown.bind(this));
             this.#parentDom.addEventListener('mousemove', this.#onMouseMove.bind(this));
-            this.#parentDom.addEventListener('mouseup',   this.#onMouseUp.bind(this));
-            this.#parentDom.addEventListener('mouseleave',this.#onMouseUp.bind(this));
+            this.#parentDom.addEventListener('mouseup', this.#onMouseUp.bind(this));
+            this.#parentDom.addEventListener('mouseleave', this.#onMouseUp.bind(this));
         }
 
         if ('onwheel' in this.#parentDom) {
-            this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive:false });
+            this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive: false });
         }
 
         const ua = navigator.userAgent;
         const isSafari = /^((?!chrome|android).)*safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
-        if (isSafari) {
-            this.#parentDom.addEventListener('gesturestart',  this.#onGestureStart.bind(this),  { passive:false });
-            this.#parentDom.addEventListener('gesturechange', this.#onGestureChange.bind(this), { passive:false });
-            this.#parentDom.addEventListener('gestureend',    this.#onGestureEnd.bind(this),    { passive:false });
+        const isIPad = /iPad|Macintosh/i.test(ua) && 'ontouchend' in document; // iPadOS 13+ detection
+
+        if (isSafari || isIPad) {
+            this.#parentDom.addEventListener('gesturestart', this.#onGestureStart.bind(this), { passive: false });
+            this.#parentDom.addEventListener('gesturechange', this.#onGestureChange.bind(this), { passive: false });
+            this.#parentDom.addEventListener('gestureend', this.#onGestureEnd.bind(this), { passive: false });
+
+            // Safari needs explicit touch preventDefault even with pointer events
+            this.#parentDom.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+            this.#parentDom.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
         }
 
         this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
@@ -291,7 +297,7 @@ class InputHandler {
     #onPointerDown(e) {
         e.preventDefault();
         this.#parentDom.setPointerCapture?.(e.pointerId);
-        this.#pointers.set(e.pointerId, { x:e.pageX, y:e.pageY });
+        this.#pointers.set(e.pointerId, { x: e.pageX, y: e.pageY });
 
         const rect = this.#parentDom.getBoundingClientRect();
         this.#screenCenterX = rect.left + rect.width * 0.5 + this.#panX;
@@ -326,7 +332,7 @@ class InputHandler {
     #onPointerMove(e) {
         if (!this.#pointers.has(e.pointerId)) return;
         e.preventDefault();
-        this.#pointers.set(e.pointerId, { x:e.pageX, y:e.pageY });
+        this.#pointers.set(e.pointerId, { x: e.pageX, y: e.pageY });
 
         if (this.#pointers.size === 2 && this.#panning) {
             const pts = Array.from(this.#pointers.values());
@@ -414,7 +420,7 @@ class InputHandler {
  *     dgmt: 9
  * });
  */
-class Planisphere{
+class Planisphere {
     /**
      * 기본 테마 스타일
      * @static
@@ -463,7 +469,7 @@ class Planisphere{
         dgmt = 9,
         styles = {},
         version = '1.0.0'
-    }){
+    }) {
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
         this.limitDE = -70 * AstroMath.D2R
         //this.limitDE = -(90 - Math.abs(lat) + 5) * AstroMath.D2R;
@@ -488,7 +494,7 @@ class Planisphere{
         this.intervalDE = 30;	//적위 라인 간격(단위 도)
         this.horVector = new AstroVector();	//지평좌표값
         this.equVector = new AstroVector();	//적도좌표값
-        this.horToEquMatrix = new AstroMatrix(0,0,0,0,0,0,0,0,0); //지평좌표->적도좌표 로 바꿔주는 행렬
+        this.horToEquMatrix = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0); //지평좌표->적도좌표 로 바꿔주는 행렬
 
         this.currentDate = currentDate;
         this.astroTime = new AstroTime(dgmt, lon, lat);
@@ -523,23 +529,31 @@ class Planisphere{
         //Sky
         this.skyPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({position:'absolute', left:0, right:0})
+            .css({ position: 'absolute', left: 0, right: 0 })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
-        this.skyPanel.node.style.touchAction  = 'none';
+        this.skyPanel.node.style.touchAction = 'none';
 
         //Top
         this.topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
+            .css({ position: 'absolute', left: 0, right: 0/*, visibility:'hidden'*/ })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
-        this.topPanel.node.style.touchAction  = 'none';
+        this.topPanel.node.style.touchAction = 'none';
 
         //Info
         this.infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({position:'absolute', left:0, right:0/*, visibility:'hidden'*/})
+            .css({ position: 'absolute', left: 0, right: 0/*, visibility:'hidden'*/ })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
         this.infoPanel.node.style.touchAction = 'none';
+
+        // Safari SVG transform alignment fix
+        [this.skyPanel, this.topPanel, this.infoPanel].forEach(panel => {
+            panel.node.style.transformOrigin = 'center center';
+            panel.node.style.webkitTransformOrigin = 'center center';
+            // 모바일에서 탭 하이라이트 제거
+            panel.node.style.webkitTapHighlightColor = 'transparent';
+        });
 
         // Phase 4: InputHandler로 입력 처리 통합
         this.#inputHandler = new InputHandler(this.#parentDom, {
@@ -572,10 +586,10 @@ class Planisphere{
         this.topPanel.clear();
         this.infoPanel.clear();
         this.#render();
-        if(isInit){
+        if (isInit) {
             this.#rotateCurrentDate(true);
             this.#resize();
-        }else{
+        } else {
             this.#applyTransform();
         }
     }
@@ -645,7 +659,7 @@ class Planisphere{
      */
     setTheme(themeName) {
         let themeStyles;
-        switch(themeName) {
+        switch (themeName) {
             case 'default':
                 themeStyles = Planisphere.defaultStyles;
                 break;
@@ -676,7 +690,7 @@ class Planisphere{
         //Local Sidereal Time 만큼 회전시켜준다.
         //즉, 남중해야할 별이 화면 아래로 향하게 한다.
         let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
-        if(isInit) this.#topPanelRotation = rotation;
+        if (isInit) this.#topPanelRotation = rotation;
 
         // InputHandler를 통해 변환 적용
         this.#applyTransform(rotation, this.#inputHandler.scale, this.#inputHandler.panX, this.#inputHandler.panY);
@@ -722,7 +736,7 @@ class Planisphere{
         this.#renderInfoPanel();
     }
 
-    #renderSkyPanel(){
+    #renderSkyPanel() {
         const renderer = new SkyPanelRenderer(
             this.skyPanel,
             this.proj,
@@ -736,7 +750,7 @@ class Planisphere{
         );
         renderer.render();
     }
-    #renderTopPanel(){
+    #renderTopPanel() {
         const renderer = new TimeRingRenderer(
             this.topPanel,
             this.proj,
@@ -751,7 +765,7 @@ class Planisphere{
         );
         renderer.render();
     }
-    #renderInfoPanel(){
+    #renderInfoPanel() {
         const renderer = new InfoPanelRenderer(
             this.infoPanel,
             this.styles,
