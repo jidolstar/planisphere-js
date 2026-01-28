@@ -40,6 +40,7 @@ python -m http.server 8080
 ```
 
 > 자세한 개발 환경 설정은 [DEV.md](DEV.md)를 참조하세요.
+> 기술적인 상세 API 명세는 [API.md](API.md)에서 확인하실 수 있습니다.
 
 
 ---
@@ -104,6 +105,7 @@ planisphere-js/
 │   ├── models.js           # 별/별자리 데이터
 │   ├── renderers.js        # SVG 렌더링
 │   ├── constants.js        # 설정 상수
+│   ├── util.js             # 유틸리티 (환경 감지 등)
 │   ├── planisphere.js      # 메인 컨트롤러
 │   └── __tests__/          # 단위 테스트 (104개)
 ├── examples/               # 사용 예제
@@ -148,6 +150,12 @@ planisphere-js/
 | `SkyPanelRenderer` | 날짜환, 별, 별자리선, 좌표선 렌더링 |
 | `TimeRingRenderer` | 시간환, 지평선, 방위 렌더링 |
 | `InfoPanelRenderer` | 범례 및 정보 패널 |
+
+### util.js (유틸리티)
+
+| 클래스/객체 | 설명 |
+|------------|------|
+| `Env` | 환경 감지 (Mobile, Safari, Mac, Windows 등) |
 
 ### planisphere.js (컨트롤러)
 
@@ -194,11 +202,15 @@ npm run test:watch
 
 ## 버전
 
-- **1.1.0 / 2026-01** : 사파리 브라우저 적용
+- **1.1.1 / 2026-01** : 플랫폼별 최적화 및 리팩토링
+  - 윈도우/Mac 환경별 폰트 최적화 (`Inconsolata`, `Consolas`, `Menlo` 등)
+  - 환경 감지 로직 중앙화 (`util.js` 신규 생성)
+  - `index.html`, `planisphere.js` 환경 감지 코드 리팩토링
+  - 범례(Legend) 위치 및 간격 미세 조정
+
+- **1.1.0 / 2026-01** : 사파리 브라우저 적용 및 ES6 모듈 리팩토링
   - 맥OS 사파리에서 SVG.js가 제대로 작동하지 않는 버그 수정
   - SVG 폰트가 제대로 적용되지 않는 버그 수정
-
-- 1.1.0 / 2026-01 : ES6 모듈 리팩토링
   - 5개 모듈로 분리 (astronomy, models, renderers, constants, planisphere)
   - JSDoc 문서화
   - 단위 테스트 104개 추가

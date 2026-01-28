@@ -42,6 +42,8 @@ import {
     EquiDistanceProjection
 } from './astronomy.js';
 
+import { Env } from './util.js';
+
 // 상수 import
 import {
     DEFAULT_LOCATION,
@@ -188,9 +190,8 @@ class InputHandler {
             this.#parentDom.addEventListener('wheel', this.#onWheel.bind(this), { passive: false });
         }
 
-        const ua = navigator.userAgent;
-        const isSafari = /^((?!chrome|android).)*safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
-        const isIPad = /iPad|Macintosh/i.test(ua) && 'ontouchend' in document; // iPadOS 13+ detection
+        const isSafari = Env.isSafari();
+        const isIPad = Env.isIPad();
 
         if (isSafari || isIPad) {
             this.#parentDom.addEventListener('gesturestart', this.#onGestureStart.bind(this), { passive: false });

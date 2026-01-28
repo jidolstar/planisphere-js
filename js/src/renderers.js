@@ -18,12 +18,21 @@
 
 import { AstroMath, AstroTime } from './astronomy.js';
 import { STARS_DATA, CONSTELLATION_LINES, CONSTELLATION_NAMES } from './models.js';
+import { Env } from './util.js';
 
 /**
- * Cross-platform font stack
+ * Platform-specific font stack
  * @constant {string}
  */
-const FONT_FAMILY = "'Inconsolata', 'Menlo', 'Consolas', 'Monaco', monospace";
+const getFontFamily = () => {
+    if (Env.isMac()) {
+        return "Inconsolata, Menlo, Monaco, monospace";
+    } else {
+        return "Inconsolata";
+    }
+};
+
+const FONT_FAMILY = getFontFamily();
 
 /**
  * 별자리판 색상 테마 정의
@@ -746,10 +755,10 @@ export class InfoPanelRenderer {
             else { radius = 0.5; alpha = 0.5 }
 
             this.canvas.circle(radius * 2)
-                .center(cx - 280 - radius / 2, cy - 170 + mag * 15)
+                .center(cx - 280 - radius / 2, cy - 170 + mag * 15.2)
                 .fill({ color: this.styles.legendColor, fill: this.styles.legendColor });
 
-            this.canvas.text(`${mag + 2} 등성`).move(cx - 270, cy - 180 + mag * 15)
+            this.canvas.text(`${mag + 2} 등성`).move(cx - 270, cy - 187 + mag * 15.5)
                 .font({ fill: this.styles.legendColor, size: this.styles.legendTextSize, family: FONT_FAMILY });
         }
 
