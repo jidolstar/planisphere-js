@@ -146,6 +146,15 @@ class InputHandler {
     get rotation() { return this.#currentRotation; }
 
     /**
+     * 외부에서 회전각을 강제로 설정 (동기화용)
+     * @param {number} angle - 설정할 회전각 (도)
+     */
+    setRotation(angle) {
+        this.#currentRotation = angle;
+        this.#lastRotation = angle;
+    }
+
+    /**
      * 현재 줌 배율
      * @readonly
      * @returns {number}
@@ -224,7 +233,12 @@ class InputHandler {
         if (!this.#dragging) return;
         const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
         const r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
-        const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+        let deltaR = (r2 - r1) * AstroMath.R2D;
+
+        // Wrap around handling
+        if (deltaR > 180) deltaR -= 360;
+        else if (deltaR < -180) deltaR += 360;
+
         this.#currentRotation = this.#lastRotation + deltaR;
         this.#applyTransform();
     }
@@ -276,7 +290,12 @@ class InputHandler {
             const t = e.touches[0];
             const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
             const r2 = Math.atan2(t.pageY - this.#screenCenterY, t.pageX - this.#screenCenterX);
-            const deltaR = AstroMath.mod(r2 - r1, AstroMath.TPI) * AstroMath.R2D;
+            let deltaR = (r2 - r1) * AstroMath.R2D;
+
+            // Wrap around handling
+            if (deltaR > 180) deltaR -= 360;
+            else if (deltaR < -180) deltaR += 360;
+
             this.#currentRotation = this.#lastRotation + deltaR;
         }
         this.#applyTransform();
@@ -361,8 +380,13 @@ class InputHandler {
         } else if (this.#pointers.size === 1 && this.#dragging && !this.#panning) {
             const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
             const r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
-            const deltaR = (r2 - r1);
-            this.#currentRotation = this.#lastRotation + (deltaR * 180 / Math.PI);
+            let deltaR = (r2 - r1) * AstroMath.R2D;
+
+            // Wrap around handling
+            if (deltaR > 180) deltaR -= 360;
+            else if (deltaR < -180) deltaR += 360;
+
+            this.#currentRotation = this.#lastRotation + deltaR;
         }
         this.#applyTransform();
     }
@@ -713,6 +737,9 @@ class Planisphere {
         if (isInit) this.#topPanelRotation = rotation;
 
         // InputHandler를 통해 변환 적용
+        if (isInit) {
+            this.#inputHandler.setRotation(rotation);
+        }
         this.#applyTransform(rotation, this.#inputHandler.scale, this.#inputHandler.panX, this.#inputHandler.panY);
     }
 
