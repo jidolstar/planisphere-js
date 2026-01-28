@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  planisphere-dev:
+    build: .
+    container_name: planisphere-dev
+    ports:
+      - "8080:80"
+    volumes:
+      # 개발 중 실시간 반영을 위한 볼륨 마운트
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./src:/usr/share/nginx/html/src:ro
+      - ./js:/usr/share/nginx/html/js:ro
+      - ./css:/usr/share/nginx/html/css:ro
+      - ./images:/usr/share/nginx/html/images:ro
+    restart: unless-stopped
+    networks:
+      - planisphere-network
+
+networks:
+  planisphere-network:
+    driver: bridge
