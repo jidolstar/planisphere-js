@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Safari SVG Rotation Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.5/svg.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #333;
+            font-family: sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 300px;
+        }
+
+        button {
+            display: block;
+            margin: 5px 0;
+            width: 100%;
+            padding: 8px;
+        }
+
+        .mode-active {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        #debug {
+            margin-top: 10px;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas"></div>
+
+    <div id="controls">
+        <h3>Safari SVG Test</h3>
+        <button id="btn-root-transform" class="mode-active">Mode A: Root SVG Transform</button>
+        <button id="btn-group-transform">Mode B: Group Transform</button>
+        <button id="btn-reset">Reset View</button>
+        <hr>
+        <div>Drag to Rotate</div>
+        <div>Wheel/Pinch to Zoom</div>
+        <div id="debug">Status: Ready</div>
+    </div>
+
+    <script>
+        // Configuration
+        const width = 1000;
+        const height = 1000;
+        let mode = 'root'; // 'root' or 'group'
+
+        // State
+        let rotation = 0;
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        let centerX = window.innerWidth / 2;
+        let centerY = window.innerHeight / 2;
+
+        // SVG Initialization
+        const canvas = SVG().addTo('#canvas')
+            .viewbox(-500, -500, 1000, 1000)
+            .attr('preserveAspectRatio', 'xMidYMid meet');
+
+        // Create Content
+        // We create a Group to hold content.
+        // In 'root' mode, we transform the canvas (root svg) or a wrapper group? 
+        // The original issue was transforming the ROOT SVG element.
+        // So let's simulate exactly that structure.
+
+        // But SVG.js addTo('#canvas') creates an <svg> inside the #canvas div.
+        // Let's create a clear visual structure.
+
+        const contentGroup = canvas.group(); // This will be used for Mode B
+
+        // Draw some shapes to make rotation obvious
+        const shapes = mode === 'group' ? contentGroup : canvas;
+
+        function drawScene(target) {
+            // Background Circle
+            target.circle(800).center(0, 0).fill('#444').stroke({ width: 2, color: '#fff' });
+
+            // Grid Lines
+            target.line(0, -400, 0, 400).stroke({ width: 2, color: 'red' }); // Y Axis
+            target.line(-400, 0, 400, 0).stroke({ width: 2, color: 'green' }); // X Axis
+
+            // Text
+            target.text('TOP (North)').center(0, -350).fill('#fff').font({ size: 40 });
+            target.text('RIGHT (East)').center(350, 0).fill('#fff').font({ size: 40 });
+            target.text('BOTTOM (South)').center(0, 350).fill('#fff').font({ size: 40 });
+            target.text('LEFT (West)').center(-350, 0).fill('#fff').font({ size: 40 });
+
+            // Some details
+            for (let i = 0; i < 360; i += 30) {
+                const rad = i * Math.PI / 180;
+                const x = 380 * Math.cos(rad);
+                const y = 380 * Math.sin(rad);
+                target.circle(10).center(x, y).fill('yellow');
+            }
+        }
+
+        drawScene(contentGroup);
+        // Note: For Mode A (Root Transform), we technically want to transform `canvas` itself.
+        // But `canvas` is the SVG document. `canvas.transform({...})` applies to the root <svg> element?
+        // Let's verify how svg.js handles root transform.
+
+        function updateTransform() {
+            const status = `Rot: ${rotation.toFixed(1)}°\nScale: ${scale.toFixed(2)}\nPan: ${panX.toFixed(0)}, ${panY.toFixed(0)}`;
+            document.getElementById('debug').textContent = status;
+
+            if (mode === 'root') {
+                // Apply to Root SVG
+                // Note: SVG.js transform on root might apply attributes or css style.
+                canvas.transform({
+                    rotate: rotation,
+                    translate: [panX, panY],
+                    scale: scale,
+                    ox: 0, oy: 0 // Transform origin
+                });
+                // Reset group transform
+                contentGroup.transform({ rotate: 0, translate: [0, 0], scale: 1 });
+            } else {
+                // Apply to Group
+                contentGroup.transform({
+                    rotate: rotation,
+                    translate: [panX, panY],
+                    scale: scale,
+                    ox: 0, oy: 0
+                });
+                // Reset root transform
+                canvas.transform({ rotate: 0, translate: [0, 0], scale: 1 });
+            }
+        }
+
+        // Input Handling
+        const el = document.getElementById('canvas');
+
+        el.addEventListener('pointerdown', e => {
+            isDragging = true;
+            lastX = e.pageX;
+            lastY = e.pageY;
+            // Recalculate center based on current pan
+            centerX = el.offsetWidth / 2 + panX;
+            centerY = el.offsetHeight / 2 + panY;
+            el.setPointerCapture(e.pointerId);
+        });
+
+        el.addEventListener('pointermove', e => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            // Check for right click (dragging with right button)
+            // e.buttons: 1=Left, 2=Right, 4=Middle
+            const isRightDrag = (e.buttons & 2) === 2;
+
+            if (isRightDrag) {
+                // Panning Mode
+                panX += e.pageX - lastX;
+                panY += e.pageY - lastY;
+            } else {
+                // Rotation Mode (Left click)
+                const dx = e.pageX - centerX;
+                const dy = e.pageY - centerY;
+                const prevDx = lastX - centerX;
+                const prevDy = lastY - centerY;
+
+                const angle1 = Math.atan2(prevDy, prevDx);
+                const angle2 = Math.atan2(dy, dx);
+                // Inverted rotation direction
+                const deltaAngle = -1 * (angle2 - angle1) * 180 / Math.PI;
+
+                rotation += deltaAngle;
+            }
+
+            lastX = e.pageX;
+            lastY = e.pageY;
+            updateTransform();
+        });
+
+        // Prevent context menu to allow right-click dragging
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            return false;
+        });
+
+        el.addEventListener('pointerup', e => {
+            isDragging = false;
+            el.releasePointerCapture(e.pointerId);
+        });
+
+        el.addEventListener('wheel', e => {
+            e.preventDefault();
+            scale += e.deltaY * -0.001;
+            scale = Math.min(Math.max(.125, scale), 4);
+            updateTransform();
+        });
+
+        // UI Logic
+        document.getElementById('btn-root-transform').onclick = () => {
+            mode = 'root';
+            resetState();
+            document.getElementById('btn-root-transform').classList.add('mode-active');
+            document.getElementById('btn-group-transform').classList.remove('mode-active');
+        };
+
+        document.getElementById('btn-group-transform').onclick = () => {
+            mode = 'group';
+            resetState();
+            document.getElementById('btn-group-transform').classList.add('mode-active');
+            document.getElementById('btn-root-transform').classList.remove('mode-active');
+        };
+
+        document.getElementById('btn-reset').onclick = resetState;
+
+        function resetState() {
+            rotation = 0;
+            scale = 1;
+            panX = 0;
+            panY = 0;
+            updateTransform();
+        }
+
+        // Initial Render
+        resetState();
+
+    </script>
+</body>
+
+</html>

@@ -202,7 +202,11 @@ class InputHandler {
             this.#parentDom.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
         }
 
-        this.#parentDom.addEventListener('contextmenu', e => e.preventDefault());
+        // Prevent context menu
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            return false;
+        });
     }
 
     // Mouse Events
@@ -304,7 +308,9 @@ class InputHandler {
         this.#screenCenterY = rect.top + rect.height * 0.5 + this.#panY;
 
         const isMouse = e.pointerType === 'mouse';
-        const wantPan = isMouse && ((e.buttons & 2) || (e.buttons & 4) || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey);
+        // Right click (button 2) triggers panning
+        const isRightClick = e.button === 2;
+        const wantPan = isMouse && (isRightClick || (e.buttons & 4) || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey);
 
         if (this.#pointers.size === 1) {
             if (wantPan) {
@@ -446,8 +452,16 @@ class Planisphere {
     #parentDom;
     /** @type {InputHandler} */
     #inputHandler;
+    /** @type {import('@svgdotjs/svg.js').G} */
+    #skyGroup;
+    /** @type {import('@svgdotjs/svg.js').G} */
+    #topGroup;
+    /** @type {import('@svgdotjs/svg.js').G} */
+    #infoGroup;
     /** @type {number} */
     #topPanelRotation = 0;
+    /** @type {number} */
+    #skyRotation = 0;
 
     /**
      * Planisphere 인스턴스 생성
@@ -529,31 +543,34 @@ class Planisphere {
         //Sky
         this.skyPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({ position: 'absolute', left: 0, right: 0 })
+            .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
         this.skyPanel.node.style.touchAction = 'none';
+        this.#skyGroup = this.skyPanel.group();
 
         //Top
         this.topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({ position: 'absolute', left: 0, right: 0/*, visibility:'hidden'*/ })
+            .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
         this.topPanel.node.style.touchAction = 'none';
+        this.#topGroup = this.topPanel.group();
 
         //Info
         this.infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .css({ position: 'absolute', left: 0, right: 0/*, visibility:'hidden'*/ })
+            .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
             .viewbox(-this.centerX, -this.centerY, this.width, this.height);
         this.infoPanel.node.style.touchAction = 'none';
+        this.#infoGroup = this.infoPanel.group();
 
-        // Safari SVG transform alignment fix
-        [this.skyPanel, this.topPanel, this.infoPanel].forEach(panel => {
-            panel.node.style.transformOrigin = 'center center';
-            panel.node.style.webkitTransformOrigin = 'center center';
-            // 모바일에서 탭 하이라이트 제거
-            panel.node.style.webkitTapHighlightColor = 'transparent';
-        });
+        // Safari SVG transform alignment fix - NO LONGER NEEDED with group transform
+        // [this.skyPanel, this.topPanel, this.infoPanel].forEach(panel => {
+        //     panel.node.style.transformOrigin = 'center center';
+        //     panel.node.style.webkitTransformOrigin = 'center center';
+        //     // 모바일에서 탭 하이라이트 제거
+        //     panel.node.style.webkitTapHighlightColor = 'transparent';
+        // });
 
         // Phase 4: InputHandler로 입력 처리 통합
         this.#inputHandler = new InputHandler(this.#parentDom, {
@@ -582,9 +599,9 @@ class Planisphere {
             'linear-gradient(to bottom, ' + this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')';
 
         // 패널 다시 그리기
-        this.skyPanel.clear();
-        this.topPanel.clear();
-        this.infoPanel.clear();
+        this.#skyGroup.clear();
+        this.#topGroup.clear();
+        this.#infoGroup.clear();
         this.#render();
         if (isInit) {
             this.#rotateCurrentDate(true);
@@ -616,7 +633,8 @@ class Planisphere {
         // 연도 변경 시 날짜환 다시 그리기
         // if (this._lastYear !== Y) {
         //     this._lastYear = Y;
-        //     this.skyPanel.clear();
+        //     this._lastYear = Y;
+        //     this.#skyGroup.clear();
         //     this.renderSkyPanel();
         //     this.#applyTransform();
         // }
@@ -646,9 +664,9 @@ class Planisphere {
         this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
 
         // 전체 다시 그리기
-        this.skyPanel.clear();
-        this.topPanel.clear();
-        this.infoPanel.clear();
+        this.#skyGroup.clear();
+        this.#topGroup.clear();
+        this.#infoGroup.clear();
         this.#render();
         this.#rotateCurrentDate(true);
     }
@@ -680,9 +698,9 @@ class Planisphere {
      * 별자리판을 다시 그립니다.
      */
     render() {
-        this.skyPanel.clear();
-        this.topPanel.clear();
-        this.infoPanel.clear();
+        this.#skyGroup.clear();
+        this.#topGroup.clear();
+        this.#infoGroup.clear();
         this.#render();
         this.#rotateCurrentDate(false);
     }
@@ -690,6 +708,7 @@ class Planisphere {
         //Local Sidereal Time 만큼 회전시켜준다.
         //즉, 남중해야할 별이 화면 아래로 향하게 한다.
         let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
+        this.#skyRotation = rotation;
         if (isInit) this.#topPanelRotation = rotation;
 
         // InputHandler를 통해 변환 적용
@@ -697,19 +716,21 @@ class Planisphere {
     }
 
     #applyTransform(rotation, scale, panX, panY) {
-        this.skyPanel.transform({
+        if (rotation == null) rotation = this.#skyRotation;
+
+        this.#skyGroup.transform({
             rotate: rotation,
             translate: [panX, panY],
             scale: scale,
             ox: 0, oy: 0
         });
-        this.topPanel.transform({
+        this.#topGroup.transform({
             rotate: this.#topPanelRotation,
             translate: [panX, panY],
             scale: scale,
             ox: 0, oy: 0
         });
-        this.infoPanel.transform({
+        this.#infoGroup.transform({
             rotate: 0,
             translate: [panX, panY],
             scale: scale,
@@ -738,7 +759,7 @@ class Planisphere {
 
     #renderSkyPanel() {
         const renderer = new SkyPanelRenderer(
-            this.skyPanel,
+            this.#skyGroup,
             this.proj,
             this.styles,
             this.astroTime,
@@ -752,7 +773,7 @@ class Planisphere {
     }
     #renderTopPanel() {
         const renderer = new TimeRingRenderer(
-            this.topPanel,
+            this.#topGroup,
             this.proj,
             this.styles,
             this.astroTime,
@@ -767,7 +788,7 @@ class Planisphere {
     }
     #renderInfoPanel() {
         const renderer = new InfoPanelRenderer(
-            this.infoPanel,
+            this.#infoGroup,
             this.styles,
             this.version
         );
