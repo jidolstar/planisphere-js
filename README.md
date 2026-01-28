@@ -194,7 +194,11 @@ npm run test:watch
 
 ## 버전
 
-- **1.1.0 / 2026-01** : ES6 모듈 리팩토링
+- **1.1.0 / 2026-01** : 사파리 브라우저 적용
+  - 맥OS 사파리에서 SVG.js가 제대로 작동하지 않는 버그 수정
+  - SVG 폰트가 제대로 적용되지 않는 버그 수정
+
+- 1.1.0 / 2026-01 : ES6 모듈 리팩토링
   - 5개 모듈로 분리 (astronomy, models, renderers, constants, planisphere)
   - JSDoc 문서화
   - 단위 테스트 104개 추가

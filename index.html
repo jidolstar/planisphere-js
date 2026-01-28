@@ -1,262 +1,266 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="description" content="아빠별의 별자리판(Planisphere)입니다. 별자리를 쉽게 공부하는 데 필요한 교육자료가 되길 희망합니다."> 
-<meta name="author" content="JI YONG HO"> 
-<meta name="robots" content="robots">
-<meta name="keywords" content="Planisphere,별자리판,별자리,밤하늘,아빠별,우주,천문"> 
-<meta name="og:site_name" content="아빠별 별자리판 Planisphere" />
-<meta name="og:title" content="아빠별 별자리판 Planisphere">
-<meta name="og:type" content="website">
-<meta name="og:description" content="아빠별의 별자리판(Planisphere)입니다. 별자리를 쉽게 공부하는 데 필요한 교육자료가 되길 희망합니다."/>
-<meta property="og:image" content="https://jidolstar.github.io/planisphere-js/ogimage.png">
-<link rel="canonical" href="https://jidolstar.github.io/planisphere-js/">	
-<title>아빠별 별자리판 Planisphere</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/control-panel.css">
-<link rel="stylesheet" href="css/modal.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.5/svg.min.js"></script>
-</head>
-<body>
-<div id="planisphere"></div>
 
-<!-- 컨트롤 패널 -->
-<div class="ps-controls" id="ps-controls">
-  <div class="ps-controls-bar" id="ps-controls-bar">
-    <button class="ps-bar-btn" id="ps-settings">⚙</button>
-    <div class="ps-bar-title">날짜/시간 설정</div>
-    <button class="ps-bar-btn" id="ps-toggle">−</button>
-  </div>
-  <div class="ps-controls-body" id="ps-controls-body">
-    <div class="row">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="아빠별의 별자리판(Planisphere)입니다. 별자리를 쉽게 공부하는 데 필요한 교육자료가 되길 희망합니다.">
+  <meta name="author" content="JI YONG HO">
+  <meta name="robots" content="robots">
+  <meta name="keywords" content="Planisphere,별자리판,별자리,밤하늘,아빠별,우주,천문">
+  <meta name="og:site_name" content="아빠별 별자리판 Planisphere" />
+  <meta name="og:title" content="아빠별 별자리판 Planisphere">
+  <meta name="og:type" content="website">
+  <meta name="og:description" content="아빠별의 별자리판(Planisphere)입니다. 별자리를 쉽게 공부하는 데 필요한 교육자료가 되길 희망합니다." />
+  <meta property="og:image" content="https://jidolstar.github.io/planisphere-js/ogimage.png">
+  <link rel="canonical" href="https://jidolstar.github.io/planisphere-js/">
+  <title>아빠별 별자리판 Planisphere</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/control-panel.css">
+  <link rel="stylesheet" href="css/modal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.5/svg.min.js"></script>
+</head>
+
+<body>
+  <div id="planisphere"></div>
+
+  <!-- 컨트롤 패널 -->
+  <div class="ps-controls" id="ps-controls">
+    <div class="ps-controls-bar" id="ps-controls-bar">
+      <button class="ps-bar-btn" id="ps-settings">⚙</button>
+      <div class="ps-bar-title">날짜/시간 설정</div>
+      <button class="ps-bar-btn" id="ps-toggle">−</button>
+    </div>
+    <div class="ps-controls-body" id="ps-controls-body">
+      <div class="row">
         <input type="date" id="ps-date">
         <input type="time" id="ps-time" step="60">
-    </div>
-    <div class="row">
+      </div>
+      <div class="row">
         <button id="ps-now">지금</button>
         <button data-preset="21" class="ps-preset">밤 9시</button>
-        <button data-preset="0"  class="ps-preset">자정</button>
-    </div>
-    <div class="row">
+        <button data-preset="0" class="ps-preset">자정</button>
+      </div>
+      <div class="row">
         <div class="ps-adjust-col">
-        <span class="ps-adjust-label">년</span>
-        <button class="ps-adjust-btn plus"  id="year-plus">＋</button>
-        <button class="ps-adjust-btn minus" id="year-minus">−</button>
+          <span class="ps-adjust-label">년</span>
+          <button class="ps-adjust-btn plus" id="year-plus">＋</button>
+          <button class="ps-adjust-btn minus" id="year-minus">−</button>
         </div>
         <div class="ps-adjust-col">
-        <span class="ps-adjust-label">월</span>
-        <button class="ps-adjust-btn plus"  id="month-plus">＋</button>
-        <button class="ps-adjust-btn minus" id="month-minus">−</button>
+          <span class="ps-adjust-label">월</span>
+          <button class="ps-adjust-btn plus" id="month-plus">＋</button>
+          <button class="ps-adjust-btn minus" id="month-minus">−</button>
         </div>
         <div class="ps-adjust-col">
-        <span class="ps-adjust-label">일</span>
-        <button class="ps-adjust-btn plus"  id="day-plus">＋</button>
-        <button class="ps-adjust-btn minus" id="day-minus">−</button>
+          <span class="ps-adjust-label">일</span>
+          <button class="ps-adjust-btn plus" id="day-plus">＋</button>
+          <button class="ps-adjust-btn minus" id="day-minus">−</button>
         </div>
         <div class="ps-adjust-col">
-        <span class="ps-adjust-label">시</span>
-        <button class="ps-adjust-btn plus"  id="hour-plus">＋</button>
-        <button class="ps-adjust-btn minus" id="hour-minus">−</button>
+          <span class="ps-adjust-label">시</span>
+          <button class="ps-adjust-btn plus" id="hour-plus">＋</button>
+          <button class="ps-adjust-btn minus" id="hour-minus">−</button>
         </div>
         <div class="ps-adjust-col">
-        <span class="ps-adjust-label">분</span>
-        <button class="ps-adjust-btn plus"  id="minute-plus">＋</button>
-        <button class="ps-adjust-btn minus" id="minute-minus">−</button>
+          <span class="ps-adjust-label">분</span>
+          <button class="ps-adjust-btn plus" id="minute-plus">＋</button>
+          <button class="ps-adjust-btn minus" id="minute-minus">−</button>
         </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- 설정 모달 -->
-<div class="ps-modal" id="ps-modal" style="display:none;">
-  <div class="ps-modal-content">
-    <div class="ps-modal-header">
-      <button id="ps-modal-close">✕</button>
-      <h2>설정</h2>
-    </div>
-    <div class="ps-modal-body">
-      <p id="ps-welcome-text" style="margin:0; font-size:14px; color:#ccc; display:none; text-align: center;">
-        👋 아빠별 별자리판에 오신 것을 환영합니다!<br>
-        원하는 테마를 선택해 주시고 사용법을 꼭 확인해 주세요.
-      </p>      
-      <section>
-        <h3>테마</h3>
-        <div class="ps-theme-select">
+  <!-- 설정 모달 -->
+  <div class="ps-modal" id="ps-modal" style="display:none;">
+    <div class="ps-modal-content">
+      <div class="ps-modal-header">
+        <button id="ps-modal-close">✕</button>
+        <h2>설정</h2>
+      </div>
+      <div class="ps-modal-body">
+        <p id="ps-welcome-text" style="margin:0; font-size:14px; color:#ccc; display:none; text-align: center;">
+          👋 아빠별 별자리판에 오신 것을 환영합니다!<br>
+          원하는 테마를 선택해 주시고 사용법을 꼭 확인해 주세요.
+        </p>
+        <section>
+          <h3>테마</h3>
+          <div class="ps-theme-select">
             <img src="images/theme_default.jpg" alt="기본 테마" data-theme="default">
             <img src="images/theme_dark.jpg" alt="다크 테마" data-theme="dark">
             <img src="images/theme_light.jpg" alt="라이트 테마" data-theme="light">
-        </div>
-      </section>
-      
-      <section>
-        <h3>사용법</h3>
-        <div id="ps-usage">
-          <!-- JS에서 PC/모바일 구분 후 채워넣음 -->
-        </div>
-      </section>
-      
-      <section>
-        <h3>제작자</h3>
-        <div>
+          </div>
+        </section>
+
+        <section>
+          <h3>사용법</h3>
+          <div id="ps-usage">
+            <!-- JS에서 PC/모바일 구분 후 채워넣음 -->
+          </div>
+        </section>
+
+        <section>
+          <h3>제작자</h3>
+          <div>
             <ul>
-                <li>제작 : 지용호</li>
-                <li>이메일 : <a href="mailto:jidolstar@gmail.com">jidolstar@gmail.com</a></li>
-                <li>Github : <a href="https://github.com/jidolstar/planisphere-js" target="_blank">jidolstar/planisphere-js</a></li>
+              <li>제작 : 지용호</li>
+              <li>이메일 : <a href="mailto:jidolstar@gmail.com">jidolstar@gmail.com</a></li>
+              <li>Github : <a href="https://github.com/jidolstar/planisphere-js"
+                  target="_blank">jidolstar/planisphere-js</a></li>
             </ul>
-        </div>
-      </section>
-      
+          </div>
+        </section>
+
+      </div>
     </div>
   </div>
-</div>
 
-<script type="module">
-import Planisphere from './js/src/planisphere.js';
+  <script type="module">
+    import Planisphere from './js/src/planisphere.js';
 
-const version = '1.1.0';
-const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
+    const version = '1.1.1';
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
 
-// 저장된 테마 불러오기
-const savedTheme = localStorage.getItem("planisphereTheme") || "default";
-let initialStyles;
-if (savedTheme === "dark") {
-  document.body.style.background="#000";
-  initialStyles = Planisphere.darkStyles;
-} else if (savedTheme === "light") {
-  document.body.style.background="#fff";
-  initialStyles = Planisphere.lightStyles;
-} else {
-  document.body.style.background="#777";
-  initialStyles = Planisphere.defaultStyles;
-}
+    // 저장된 테마 불러오기
+    const savedTheme = localStorage.getItem("planisphereTheme") || "default";
+    let initialStyles;
+    if (savedTheme === "dark") {
+      document.body.style.background = "#000";
+      initialStyles = Planisphere.darkStyles;
+    } else if (savedTheme === "light") {
+      document.body.style.background = "#fff";
+      initialStyles = Planisphere.lightStyles;
+    } else {
+      document.body.style.background = "#777";
+      initialStyles = Planisphere.defaultStyles;
+    }
 
-let planisphere = new Planisphere({
-    wrapperDomId: '#planisphere',
-    currentDate: new Date(),
-    lon: 126.98,
-    lat: 37.57,
-    dgmt: 9,
-    styles: initialStyles,
-    version: version
-});
+    let planisphere = new Planisphere({
+      wrapperDomId: '#planisphere',
+      currentDate: new Date(),
+      lon: 126.98,
+      lat: 37.57,
+      dgmt: 9,
+      styles: initialStyles,
+      version: version
+    });
 
-/*********************************
- * 컨트롤 패널 
- *********************************/ 
+    /*********************************
+     * 컨트롤 패널 
+     *********************************/
 
-// --- DOM 요소 ---
-const $date = document.getElementById('ps-date');
-const $time = document.getElementById('ps-time');
-const $now  = document.getElementById('ps-now');
+    // --- DOM 요소 ---
+    const $date = document.getElementById('ps-date');
+    const $time = document.getElementById('ps-time');
+    const $now = document.getElementById('ps-now');
 
-// 공통: input값 → Date 변환
-function getDateFromInputs() {
-  if(!$date.value || !$time.value) return null;
-  return new Date(`${$date.value}T${$time.value}`);
-}
+    // 공통: input값 → Date 변환
+    function getDateFromInputs() {
+      if (!$date.value || !$time.value) return null;
+      return new Date(`${$date.value}T${$time.value}`);
+    }
 
-// 초기값 현재 시간 반영
-const initNow = () => {
-    const now = new Date();
-    const pad = n => String(n).padStart(2,'0');
-    const Y = now.getFullYear();
-    const M = pad(now.getMonth()+1);
-    const D = pad(now.getDate());
-    const h = pad(now.getHours());
-    const m = pad(now.getMinutes());
-    $date.value = `${Y}-${M}-${D}`;
-    $time.value = `${h}:${m}`;
-    planisphere.setDateTime(now);
-};
-initNow();
-
-// input 변경 이벤트
-$date.addEventListener('change', ()=> {
-    const dt = getDateFromInputs();
-    if (dt) planisphere.setDateTime(dt);
-});
-$time.addEventListener('change', ()=> {
-    const dt = getDateFromInputs();
-    if (dt) planisphere.setDateTime(dt);
-});
-
-// "지금" 버튼
-$now.addEventListener('click', ()=> {
+    // 초기값 현재 시간 반영
+    const initNow = () => {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const Y = now.getFullYear();
+      const M = pad(now.getMonth() + 1);
+      const D = pad(now.getDate());
+      const h = pad(now.getHours());
+      const m = pad(now.getMinutes());
+      $date.value = `${Y}-${M}-${D}`;
+      $time.value = `${h}:${m}`;
+      planisphere.setDateTime(now);
+    };
     initNow();
-});
 
-// 프리셋 버튼들
-document.querySelectorAll('.ps-preset').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-        if(!$date.value) return;
-        const [Y,M,D] = $date.value.split('-').map(Number);
+    // input 변경 이벤트
+    $date.addEventListener('change', () => {
+      const dt = getDateFromInputs();
+      if (dt) planisphere.setDateTime(dt);
+    });
+    $time.addEventListener('change', () => {
+      const dt = getDateFromInputs();
+      if (dt) planisphere.setDateTime(dt);
+    });
+
+    // "지금" 버튼
+    $now.addEventListener('click', () => {
+      initNow();
+    });
+
+    // 프리셋 버튼들
+    document.querySelectorAll('.ps-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!$date.value) return;
+        const [Y, M, D] = $date.value.split('-').map(Number);
         const h = Number(btn.dataset.preset);
-        const dt = new Date(Y, M-1, D, h, 0, 0);
-        const pad = n => String(n).padStart(2,'0');
+        const dt = new Date(Y, M - 1, D, h, 0, 0);
+        const pad = n => String(n).padStart(2, '0');
         $time.value = `${pad(h)}:00`;
         planisphere.setDateTime(dt);
+      });
     });
-});
 
-// --- 증감 버튼 유틸 ---
-function adjust(unit, delta) {
-    const dt = getDateFromInputs();
-    if (!dt) return;
-    switch(unit){
-        case 'year':  dt.setFullYear(dt.getFullYear()+delta); break;
-        case 'month': dt.setMonth(dt.getMonth()+delta); break;
-        case 'day':   dt.setDate(dt.getDate()+delta); break;
-        case 'hour':  dt.setHours(dt.getHours()+delta); break;
-        case 'minute':dt.setMinutes(dt.getMinutes()+delta); break;
+    // --- 증감 버튼 유틸 ---
+    function adjust(unit, delta) {
+      const dt = getDateFromInputs();
+      if (!dt) return;
+      switch (unit) {
+        case 'year': dt.setFullYear(dt.getFullYear() + delta); break;
+        case 'month': dt.setMonth(dt.getMonth() + delta); break;
+        case 'day': dt.setDate(dt.getDate() + delta); break;
+        case 'hour': dt.setHours(dt.getHours() + delta); break;
+        case 'minute': dt.setMinutes(dt.getMinutes() + delta); break;
+      }
+      const pad = n => String(n).padStart(2, '0');
+      const Y = dt.getFullYear();
+      const M = pad(dt.getMonth() + 1);
+      const D = pad(dt.getDate());
+      const h = pad(dt.getHours());
+      const m = pad(dt.getMinutes());
+      $date.value = `${Y}-${M}-${D}`;
+      $time.value = `${h}:${m}`;
+      planisphere.setDateTime(dt);
     }
-    const pad = n => String(n).padStart(2,'0');
-    const Y = dt.getFullYear();
-    const M = pad(dt.getMonth()+1);
-    const D = pad(dt.getDate());
-    const h = pad(dt.getHours());
-    const m = pad(dt.getMinutes());
-    $date.value = `${Y}-${M}-${D}`;
-    $time.value = `${h}:${m}`;
-    planisphere.setDateTime(dt);
-}
 
-// 버튼 바인딩
-document.getElementById('year-minus').onclick   = ()=>adjust('year', -1);
-document.getElementById('year-plus').onclick    = ()=>adjust('year', +1);
-document.getElementById('month-minus').onclick  = ()=>adjust('month', -1);
-document.getElementById('month-plus').onclick   = ()=>adjust('month', +1);
-document.getElementById('day-minus').onclick    = ()=>adjust('day', -1);
-document.getElementById('day-plus').onclick     = ()=>adjust('day', +1);
-document.getElementById('hour-minus').onclick   = ()=>adjust('hour', -1);
-document.getElementById('hour-plus').onclick    = ()=>adjust('hour', +1);
-document.getElementById('minute-minus').onclick = ()=>adjust('minute', -1);
-document.getElementById('minute-plus').onclick  = ()=>adjust('minute', +1);
+    // 버튼 바인딩
+    document.getElementById('year-minus').onclick = () => adjust('year', -1);
+    document.getElementById('year-plus').onclick = () => adjust('year', +1);
+    document.getElementById('month-minus').onclick = () => adjust('month', -1);
+    document.getElementById('month-plus').onclick = () => adjust('month', +1);
+    document.getElementById('day-minus').onclick = () => adjust('day', -1);
+    document.getElementById('day-plus').onclick = () => adjust('day', +1);
+    document.getElementById('hour-minus').onclick = () => adjust('hour', -1);
+    document.getElementById('hour-plus').onclick = () => adjust('hour', +1);
+    document.getElementById('minute-minus').onclick = () => adjust('minute', -1);
+    document.getElementById('minute-plus').onclick = () => adjust('minute', +1);
 
 
-const controls = document.getElementById("ps-controls");
-const bar = document.getElementById("ps-controls-bar");
-const toggleBtn = document.getElementById("ps-toggle");
+    const controls = document.getElementById("ps-controls");
+    const bar = document.getElementById("ps-controls-bar");
+    const toggleBtn = document.getElementById("ps-toggle");
 
-let isCollapsed = false;
+    let isCollapsed = false;
 
-// 접기/펼치기
-toggleBtn.addEventListener("click", () => {
-  isCollapsed = !isCollapsed;
-  controls.classList.toggle("collapsed", isCollapsed);
-  toggleBtn.textContent = isCollapsed ? "+" : "−";
-});
+    // 접기/펼치기
+    toggleBtn.addEventListener("click", () => {
+      isCollapsed = !isCollapsed;
+      controls.classList.toggle("collapsed", isCollapsed);
+      toggleBtn.textContent = isCollapsed ? "+" : "−";
+    });
 
-/*********************************
- * 설정 모달 
- *********************************/ 
-const modal = document.getElementById("ps-modal");
-const modalClose = document.getElementById("ps-modal-close");
-const settingsBtn = document.getElementById("ps-settings");
-const usageDiv = document.getElementById("ps-usage");
-usageDiv.innerHTML = `
+    /*********************************
+     * 설정 모달 
+     *********************************/
+    const modal = document.getElementById("ps-modal");
+    const modalClose = document.getElementById("ps-modal-close");
+    const settingsBtn = document.getElementById("ps-settings");
+    const usageDiv = document.getElementById("ps-usage");
+    usageDiv.innerHTML = `
   <p>📱 스마트폰</p>
   <ul>
     <li>회전: 한 손가락 드래그</li>
@@ -271,77 +275,78 @@ usageDiv.innerHTML = `
   </ul>
 `;
 
-function openSettingsModal(showWelcome = false) {
-  modal.style.display = "flex";    
-  const welcome = document.getElementById("ps-welcome-text");
+    function openSettingsModal(showWelcome = false) {
+      modal.style.display = "flex";
+      const welcome = document.getElementById("ps-welcome-text");
 
-  modal.classList.add("open");
+      modal.classList.add("open");
 
-  if (showWelcome) {
-    welcome.style.display = "block";
-  } else {
-    welcome.style.display = "none";
-  }
-}
+      if (showWelcome) {
+        welcome.style.display = "block";
+      } else {
+        welcome.style.display = "none";
+      }
+    }
 
-// 열기
-settingsBtn.addEventListener("click",  () => {
-  openSettingsModal(false);
-});
+    // 열기
+    settingsBtn.addEventListener("click", () => {
+      openSettingsModal(false);
+    });
 
-// 닫기
-modalClose.addEventListener("click", () => {
-  modal.style.display = "none";
-});
-// ESC 키로 닫기
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    if (modal.style.display === "block" || modal.classList.contains("open")) {
+    // 닫기
+    modalClose.addEventListener("click", () => {
       modal.style.display = "none";
-      modal.classList.remove("open"); // open 클래스를 쓰는 경우 대비
-    }
-  }
-});
+    });
+    // ESC 키로 닫기
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (modal.style.display === "block" || modal.classList.contains("open")) {
+          modal.style.display = "none";
+          modal.classList.remove("open"); // open 클래스를 쓰는 경우 대비
+        }
+      }
+    });
 
-// 페이지 로드시 첫 방문 확인
-window.addEventListener("DOMContentLoaded", () => {
-  const firstVisitDone = localStorage.getItem("planisphereFirstVisitDone");
-  if (!firstVisitDone) {
-    openSettingsModal(true);
-    localStorage.setItem("planisphereFirstVisitDone", "true");
-  }
-});
+    // 페이지 로드시 첫 방문 확인
+    window.addEventListener("DOMContentLoaded", () => {
+      const firstVisitDone = localStorage.getItem("planisphereFirstVisitDone");
+      if (!firstVisitDone) {
+        openSettingsModal(true);
+        localStorage.setItem("planisphereFirstVisitDone", "true");
+      }
+    });
 
-// 테마 변경
-document.querySelectorAll('.ps-theme-select img').forEach(img => {
-  if (img.dataset.theme === savedTheme) img.classList.add("active");
-  img.addEventListener("click", () => {
-    document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
-    img.classList.add('active');
+    // 테마 변경
+    document.querySelectorAll('.ps-theme-select img').forEach(img => {
+      if (img.dataset.theme === savedTheme) img.classList.add("active");
+      img.addEventListener("click", () => {
+        document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
+        img.classList.add('active');
 
-    const theme = img.dataset.theme;
-    localStorage.setItem("planisphereTheme", theme); // 로컬 스토리지 저장
-    if (theme === "dark") {
-      document.body.style.background="#000";
-      planisphere.setStyles(Planisphere.darkStyles);
-    } else if (theme === "light") {
-      document.body.style.background="#fff";
-      planisphere.setStyles(Planisphere.lightStyles);
-    } else {
-      document.body.style.background="#777";
-      planisphere.setStyles(Planisphere.defaultStyles);
-    }
-  });
-});
+        const theme = img.dataset.theme;
+        localStorage.setItem("planisphereTheme", theme); // 로컬 스토리지 저장
+        if (theme === "dark") {
+          document.body.style.background = "#000";
+          planisphere.setStyles(Planisphere.darkStyles);
+        } else if (theme === "light") {
+          document.body.style.background = "#fff";
+          planisphere.setStyles(Planisphere.lightStyles);
+        } else {
+          document.body.style.background = "#777";
+          planisphere.setStyles(Planisphere.defaultStyles);
+        }
+      });
+    });
 
-</script>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FCXVFS01Z7"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-FCXVFS01Z7');
-</script>
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FCXVFS01Z7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FCXVFS01Z7');
+  </script>
 </body>
+
 </html>
