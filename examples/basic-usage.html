@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planisphere 기본 사용법</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #4fc3f7; }
+        h2 { color: #81d4fa; margin-top: 2em; }
+        pre {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #30363d;
+        }
+        code { color: #79c0ff; }
+        .demo-container {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        #planisphere {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #4fc3f7;
+            color: #000;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover { background: #81d4fa; }
+        .info {
+            background: #1e3a5f;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Planisphere 기본 사용법</h1>
+
+    <p>별자리판 라이브러리의 기본적인 사용 방법을 보여주는 예제입니다.</p>
+
+    <h2>1. 기본 초기화</h2>
+    <pre><code>import { Planisphere } from './js/src/planisphere.js';
+
+// 별자리판 생성 (서울 기준)
+const planisphere = new Planisphere({
+    wrapperDomId: '#planisphere',  // 컨테이너 ID
+    currentDate: new Date(),       // 현재 시간
+    lon: 126.98,                   // 경도 (동경)
+    lat: 37.57,                    // 위도 (북위)
+    dgmt: 9,                       // UTC+9 (한국 표준시)
+    version: '1.0.0'
+});</code></pre>
+
+    <h2>2. 실시간 데모</h2>
+    <div class="demo-container">
+        <div id="planisphere"></div>
+        <div class="controls">
+            <button onclick="setNow()">현재 시각</button>
+            <button onclick="setMidnight()">오늘 자정</button>
+            <button onclick="setSummer()">하지 21시</button>
+            <button onclick="setWinter()">동지 21시</button>
+            <button onclick="toggleTheme()">테마 변경</button>
+        </div>
+        <div class="info" id="info">
+            로딩 중...
+        </div>
+    </div>
+
+    <h2>3. API 사용법</h2>
+
+    <h3>날짜/시간 변경</h3>
+    <pre><code>// 특정 날짜로 설정
+planisphere.setDateTime(new Date(2024, 5, 21, 21, 0, 0));
+
+// 현재 시각으로 업데이트
+planisphere.setDateTime(new Date());</code></pre>
+
+    <h3>관측 위치 변경</h3>
+    <pre><code>// 부산으로 변경 (경도 129.08, 위도 35.18)
+planisphere.setLocation(129.08, 35.18);
+
+// 도쿄로 변경 (경도 139.69, 위도 35.69)
+planisphere.setLocation(139.69, 35.69);</code></pre>
+
+    <h3>테마 변경</h3>
+    <pre><code>// 사용 가능한 테마: 'default', 'dark', 'light'
+planisphere.setTheme('dark');
+planisphere.setTheme('light');
+planisphere.setTheme('default');</code></pre>
+
+    <h2>4. 다른 도시 설정</h2>
+    <pre><code>// 주요 도시 좌표
+const cities = {
+    seoul:    { lon: 126.98, lat: 37.57, tz: 9 },
+    busan:    { lon: 129.08, lat: 35.18, tz: 9 },
+    tokyo:    { lon: 139.69, lat: 35.69, tz: 9 },
+    beijing:  { lon: 116.40, lat: 39.90, tz: 8 },
+    sydney:   { lon: 151.21, lat: -33.87, tz: 10 },
+    london:   { lon: -0.13, lat: 51.51, tz: 0 },
+    newyork:  { lon: -74.01, lat: 40.71, tz: -5 },
+};
+
+// 도시 변경
+const city = cities.tokyo;
+planisphere.setLocation(city.lon, city.lat);</code></pre>
+
+    <h2>5. HTML 구조</h2>
+    <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;!-- SVG.js 라이브러리 (필수) --&gt;
+    &lt;script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2/dist/svg.min.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;!-- 별자리판이 렌더링될 컨테이너 --&gt;
+    &lt;div id="planisphere"&gt;&lt;/div&gt;
+
+    &lt;script type="module"&gt;
+        import { Planisphere } from './js/src/planisphere.js';
+
+        const planisphere = new Planisphere({
+            wrapperDomId: '#planisphere',
+            currentDate: new Date()
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+    <!-- SVG.js 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2/dist/svg.min.js"></script>
+
+    <script type="module">
+        import { Planisphere } from '../js/src/planisphere.js';
+
+        // 별자리판 초기화
+        const planisphere = new Planisphere({
+            wrapperDomId: '#planisphere',
+            currentDate: new Date(),
+            lon: 126.98,
+            lat: 37.57,
+            dgmt: 9,
+            version: '1.0.0'
+        });
+
+        let currentTheme = 'default';
+        const themes = ['default', 'dark', 'light'];
+
+        // 정보 업데이트
+        function updateInfo() {
+            const date = planisphere.currentDate;
+            document.getElementById('info').innerHTML = `
+                <strong>현재 설정:</strong><br>
+                날짜: ${date.toLocaleDateString('ko-KR')}<br>
+                시간: ${date.toLocaleTimeString('ko-KR')}<br>
+                위치: 서울 (126.98°E, 37.57°N)<br>
+                테마: ${currentTheme}
+            `;
+        }
+        updateInfo();
+
+        // 전역 함수로 노출
+        window.setNow = function() {
+            planisphere.setDateTime(new Date());
+            updateInfo();
+        };
+
+        window.setMidnight = function() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            planisphere.setDateTime(today);
+            updateInfo();
+        };
+
+        window.setSummer = function() {
+            const summer = new Date(new Date().getFullYear(), 5, 21, 21, 0, 0);
+            planisphere.setDateTime(summer);
+            updateInfo();
+        };
+
+        window.setWinter = function() {
+            const winter = new Date(new Date().getFullYear(), 11, 22, 21, 0, 0);
+            planisphere.setDateTime(winter);
+            updateInfo();
+        };
+
+        window.toggleTheme = function() {
+            const idx = (themes.indexOf(currentTheme) + 1) % themes.length;
+            currentTheme = themes[idx];
+            planisphere.setTheme(currentTheme);
+            updateInfo();
+        };
+    </script>
+</body>
+</html>

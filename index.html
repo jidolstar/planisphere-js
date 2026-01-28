@@ -19,7 +19,6 @@
 <link rel="stylesheet" href="css/control-panel.css">
 <link rel="stylesheet" href="css/modal.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.5/svg.min.js"></script>
-<script type="module" src="js/planisphere.js"></script>
 </head>
 <body>
 <div id="planisphere"></div>
@@ -115,9 +114,9 @@
 </div>
 
 <script type="module">
-import Planisphere from './js/planisphere.js';
+import Planisphere from './js/src/planisphere.js';
 
-const version = '1.0.4';
+const version = '1.1.0';
 const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)
 
 // 저장된 테마 불러오기
