@@ -129,5 +129,7 @@ export const DATE_RING_MODE = {
  */
 export const STORAGE_KEYS = {
     /** @type {string} 테마 설정 저장 키 */
-    THEME: 'planisphere_theme'
+    THEME: 'planisphere_theme',
+    /** @type {string} 위치(경도,위도) 설정 저장 키 */
+    LOCATION: 'planisphere_location'
 };

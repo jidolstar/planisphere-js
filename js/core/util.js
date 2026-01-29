@@ -59,3 +59,26 @@ export const Env = {
         return /Win32|Win64|Windows|WinCE/i.test(this.ua);
     }
 };
+
+/**
+ * 도(degree) 단위를 도/분/초(DMS) 및 방향 표시 문자로 변환합니다.
+ * 
+ * @param {number} degrees - 십진수 도 단위의 좌표
+ * @param {boolean} isLat - 위도 여부 (true: 위도, false: 경도)
+ * @returns {string} DMS 형식의 문자열 (예: N 37° 34' 12")
+ */
+export function formatDMS(degrees, isLat) {
+    const absDeg = Math.abs(degrees);
+    const d = Math.floor(absDeg);
+    const m = Math.floor((absDeg - d) * 60);
+    const s = Math.round(((absDeg - d) * 60 - m) * 60);
+
+    let direction = '';
+    if (isLat) {
+        direction = degrees >= 0 ? '북위' : '남위';
+    } else {
+        direction = degrees >= 0 ? '동경' : '서경';
+    }
+
+    return `${direction} ${d}° ${m}' ${s}"`;
+}

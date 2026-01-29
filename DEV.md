@@ -107,7 +107,7 @@ npm run test:coverage
 ### 테스트 구조
 
 ```
-js/src/__tests__/
+js/__tests__/
 ├── astromath.test.js      # 상수 및 유틸리티 함수 (19 tests)
 ├── astrotime.test.js      # 시간 변환 클래스 (45 tests)
 ├── astrovector.test.js    # 벡터/행렬 연산 (21 tests)

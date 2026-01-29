@@ -34,6 +34,14 @@
       <button class="ps-bar-btn" id="ps-toggle">−</button>
     </div>
     <div class="ps-controls-body" id="ps-controls-body">
+      <div class="row" id="ps-location-row" style="margin-bottom: 4px;">
+        <div id="ps-location-display"
+          style="flex:1; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:8px; font-size:12px; display:flex; align-items:center; justify-content:space-between; border:1px solid rgba(255,255,255,0.15);">
+          <span id="ps-location-text">위치 정보 로딩중...</span>
+          <button id="ps-location-edit"
+            style="flex:0 0 auto; width:24px; height:24px; padding:0; border:none; background:none; font-size:14px; cursor:pointer; color:#ffcc00;">📍</button>
+        </div>
+      </div>
       <div class="row">
         <input type="date" id="ps-date">
         <input type="time" id="ps-time" step="60">
@@ -117,229 +125,35 @@
     </div>
   </div>
 
-  <script type="module">
-    import Planisphere from './js/src/planisphere.js';
-    import { Env } from './js/src/util.js';
+  <!-- 위치 설정 모달 -->
+  <div class="ps-modal" id="ps-map-modal" style="display:none;">
+    <div class="ps-modal-content" style="max-width: 600px;">
+      <div class="ps-modal-header">
+        <button id="ps-map-modal-close">✕</button>
+        <h2>위치 설정</h2>
+      </div>
+      <div class="ps-modal-body">
+        <div class="ps-map-container" id="ps-map-wrapper">
+          <canvas id="ps-map-canvas"></canvas>
+          <div class="ps-map-restricted" id="ps-map-restricted-zone">
+            선택 제한 구역 (10°N ~ 10°S)
+          </div>
+        </div>
 
-    const version = '1.1.2';
-    const isMobile = Env.isMobile();
+        <div class="ps-map-info">
+          현재 선택: <span id="ps-selected-location-text">지도를 클릭해 주세요</span>
+        </div>
 
-    // 저장된 테마 불러오기
-    const savedTheme = localStorage.getItem("planisphereTheme") || "default";
-    let initialStyles;
-    if (savedTheme === "dark") {
-      document.body.style.background = "#000";
-      initialStyles = Planisphere.darkStyles;
-    } else if (savedTheme === "light") {
-      document.body.style.background = "#fff";
-      initialStyles = Planisphere.lightStyles;
-    } else {
-      document.body.style.background = "#777";
-      initialStyles = Planisphere.defaultStyles;
-    }
+        <div class="ps-map-footer">
+          <button id="ps-map-cancel" style="background:rgba(255,255,255,0.1);">취소</button>
+          <button id="ps-map-apply" class="primary" disabled>적용하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    let planisphere = new Planisphere({
-      wrapperDomId: '#planisphere',
-      currentDate: new Date(),
-      lon: 126.98,
-      lat: 37.57,
-      dgmt: 9,
-      styles: initialStyles,
-      version: version
-    });
+  <script type="module" src="./js/app/main.js"></script>
 
-    /*********************************
-     * 컨트롤 패널 
-     *********************************/
-
-    // --- DOM 요소 ---
-    const $date = document.getElementById('ps-date');
-    const $time = document.getElementById('ps-time');
-    const $now = document.getElementById('ps-now');
-
-    // 공통: input값 → Date 변환
-    function getDateFromInputs() {
-      if (!$date.value || !$time.value) return null;
-      return new Date(`${$date.value}T${$time.value}`);
-    }
-
-    // 초기값 현재 시간 반영
-    const initNow = () => {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const Y = now.getFullYear();
-      const M = pad(now.getMonth() + 1);
-      const D = pad(now.getDate());
-      const h = pad(now.getHours());
-      const m = pad(now.getMinutes());
-      $date.value = `${Y}-${M}-${D}`;
-      $time.value = `${h}:${m}`;
-      planisphere.setDateTime(now);
-    };
-    initNow();
-
-    // input 변경 이벤트
-    $date.addEventListener('change', () => {
-      const dt = getDateFromInputs();
-      if (dt) planisphere.setDateTime(dt);
-    });
-    $time.addEventListener('change', () => {
-      const dt = getDateFromInputs();
-      if (dt) planisphere.setDateTime(dt);
-    });
-
-    // "지금" 버튼
-    $now.addEventListener('click', () => {
-      initNow();
-    });
-
-    // 프리셋 버튼들
-    document.querySelectorAll('.ps-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (!$date.value) return;
-        const [Y, M, D] = $date.value.split('-').map(Number);
-        const h = Number(btn.dataset.preset);
-        const dt = new Date(Y, M - 1, D, h, 0, 0);
-        const pad = n => String(n).padStart(2, '0');
-        $time.value = `${pad(h)}:00`;
-        planisphere.setDateTime(dt);
-      });
-    });
-
-    // --- 증감 버튼 유틸 ---
-    function adjust(unit, delta) {
-      const dt = getDateFromInputs();
-      if (!dt) return;
-      switch (unit) {
-        case 'year': dt.setFullYear(dt.getFullYear() + delta); break;
-        case 'month': dt.setMonth(dt.getMonth() + delta); break;
-        case 'day': dt.setDate(dt.getDate() + delta); break;
-        case 'hour': dt.setHours(dt.getHours() + delta); break;
-        case 'minute': dt.setMinutes(dt.getMinutes() + delta); break;
-      }
-      const pad = n => String(n).padStart(2, '0');
-      const Y = dt.getFullYear();
-      const M = pad(dt.getMonth() + 1);
-      const D = pad(dt.getDate());
-      const h = pad(dt.getHours());
-      const m = pad(dt.getMinutes());
-      $date.value = `${Y}-${M}-${D}`;
-      $time.value = `${h}:${m}`;
-      planisphere.setDateTime(dt);
-    }
-
-    // 버튼 바인딩
-    document.getElementById('year-minus').onclick = () => adjust('year', -1);
-    document.getElementById('year-plus').onclick = () => adjust('year', +1);
-    document.getElementById('month-minus').onclick = () => adjust('month', -1);
-    document.getElementById('month-plus').onclick = () => adjust('month', +1);
-    document.getElementById('day-minus').onclick = () => adjust('day', -1);
-    document.getElementById('day-plus').onclick = () => adjust('day', +1);
-    document.getElementById('hour-minus').onclick = () => adjust('hour', -1);
-    document.getElementById('hour-plus').onclick = () => adjust('hour', +1);
-    document.getElementById('minute-minus').onclick = () => adjust('minute', -1);
-    document.getElementById('minute-plus').onclick = () => adjust('minute', +1);
-
-
-    const controls = document.getElementById("ps-controls");
-    const bar = document.getElementById("ps-controls-bar");
-    const toggleBtn = document.getElementById("ps-toggle");
-
-    let isCollapsed = false;
-
-    // 접기/펼치기
-    toggleBtn.addEventListener("click", () => {
-      isCollapsed = !isCollapsed;
-      controls.classList.toggle("collapsed", isCollapsed);
-      toggleBtn.textContent = isCollapsed ? "+" : "−";
-    });
-
-    /*********************************
-     * 설정 모달 
-     *********************************/
-    const modal = document.getElementById("ps-modal");
-    const modalClose = document.getElementById("ps-modal-close");
-    const settingsBtn = document.getElementById("ps-settings");
-    const usageDiv = document.getElementById("ps-usage");
-    usageDiv.innerHTML = `
-  <p>📱 스마트폰</p>
-  <ul>
-    <li>회전: 한 손가락 드래그</li>
-    <li>이동: 두 손가락 드래그</li>
-    <li>확대/축소: 핀치 제스처</li>
-  </ul>
-  <p>💻 PC</p>
-  <ul>
-    <li>회전: 마우스 드래그</li>
-    <li>이동: 마우스 오른쪽 버튼 드래그</li>
-    <li>확대/축소: 마우스 휠</li>
-  </ul>
-`;
-
-    function openSettingsModal(showWelcome = false) {
-      modal.style.display = "flex";
-      const welcome = document.getElementById("ps-welcome-text");
-
-      modal.classList.add("open");
-
-      if (showWelcome) {
-        welcome.style.display = "block";
-      } else {
-        welcome.style.display = "none";
-      }
-    }
-
-    // 열기
-    settingsBtn.addEventListener("click", () => {
-      openSettingsModal(false);
-    });
-
-    // 닫기
-    modalClose.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
-    // ESC 키로 닫기
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        if (modal.style.display === "block" || modal.classList.contains("open")) {
-          modal.style.display = "none";
-          modal.classList.remove("open"); // open 클래스를 쓰는 경우 대비
-        }
-      }
-    });
-
-    // 페이지 로드시 첫 방문 확인
-    window.addEventListener("DOMContentLoaded", () => {
-      const firstVisitDone = localStorage.getItem("planisphereFirstVisitDone");
-      if (!firstVisitDone) {
-        openSettingsModal(true);
-        localStorage.setItem("planisphereFirstVisitDone", "true");
-      }
-    });
-
-    // 테마 변경
-    document.querySelectorAll('.ps-theme-select img').forEach(img => {
-      if (img.dataset.theme === savedTheme) img.classList.add("active");
-      img.addEventListener("click", () => {
-        document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
-        img.classList.add('active');
-
-        const theme = img.dataset.theme;
-        localStorage.setItem("planisphereTheme", theme); // 로컬 스토리지 저장
-        if (theme === "dark") {
-          document.body.style.background = "#000";
-          planisphere.setStyles(Planisphere.darkStyles);
-        } else if (theme === "light") {
-          document.body.style.background = "#fff";
-          planisphere.setStyles(Planisphere.lightStyles);
-        } else {
-          document.body.style.background = "#777";
-          planisphere.setStyles(Planisphere.defaultStyles);
-        }
-      });
-    });
-
-  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FCXVFS01Z7"></script>
   <script>
@@ -348,6 +162,7 @@
     gtag('js', new Date());
     gtag('config', 'G-FCXVFS01Z7');
   </script>
+
 </body>
 
 </html>

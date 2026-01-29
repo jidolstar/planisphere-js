@@ -53,7 +53,7 @@ python -m http.server 8080
 ### 별자리판 기본 사용
 
 ```javascript
-import { Planisphere } from './js/src/planisphere.js';
+import Planisphere from './js/core/planisphere.js';
 
 // 별자리판 생성 (서울 기준)
 const planisphere = new Planisphere({
@@ -75,7 +75,7 @@ planisphere.setTheme('dark');                              // 테마: 'default',
 `astronomy.js`는 별자리판과 독립적으로 사용 가능한 순수 천문학 계산 라이브러리입니다.
 
 ```javascript
-import { AstroTime, AstroMath, AstroVector } from './js/src/astronomy.js';
+import { AstroTime, AstroMath, AstroVector } from './js/core/astronomy.js';
 
 // 율리우스일 계산
 const jd = AstroTime.jd(2024, 6, 21, 12, 0, 0);  // 2460482.0
@@ -100,13 +100,19 @@ star.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
 ```
 planisphere-js/
 ├── index.html              # 메인 페이지
-├── js/src/                 # 핵심 라이브러리 (ES6 모듈)
-│   ├── astronomy.js        # 천문학 계산 (재사용 가능)
-│   ├── models.js           # 별/별자리 데이터
-│   ├── renderers.js        # SVG 렌더링
-│   ├── constants.js        # 설정 상수
-│   ├── util.js             # 유틸리티 (환경 감지 등)
-│   ├── planisphere.js      # 메인 컨트롤러
+├── js/
+│   ├── core/               # 핵심 엔진 라이브러리 (ES6 모듈)
+│   │   ├── astronomy.js    # 천문학 계산 (재사용 가능)
+│   │   ├── models.js       # 별/별자리 데이터
+│   │   ├── renderers.js    # SVG 렌더링
+│   │   ├── constants.js    # 설정 상수
+│   │   ├── util.js         # 유틸리티 (환경 감지 등)
+│   │   └── planisphere.js  # 메인 컨트롤러 엔진
+│   ├── app/                # 애플리케이션 UI 및 제어 로직
+│   │   ├── main.js         # 앱 진입점 (Orchestrator)
+│   │   ├── control-panel.js # 날짜/시간 제어
+│   │   ├── settings-modal.js # 설정 및 테마 관리
+│   │   └── location-modal.js # 위치 및 지도 관리
 │   └── __tests__/          # 단위 테스트 (104개)
 ├── examples/               # 사용 예제
 ├── css/                    # 스타일
@@ -202,11 +208,13 @@ npm run test:watch
 
 ## 버전
 
+- **1.2.0 / 2026-01** : 프로젝트 구조 리팩토링 및 지도 기능 개선
+  - **구조 리팩토링**: `js/core`(엔진)와 `js/app`(UI 로직)으로 모듈 분리
+  - **UI 모듈화**: `index.html`의 인라인 스크립트를 `main.js`, `ControlPanel`, `SettingsModal`로 추출
+  - **지도 매핑 개선**: 새로운 세계 지도(`world_map.jpg`) 도입 및 좌표 매핑 수식 정밀화
+  - **안정성**: 테스트 경로 이동 및 모달 레이아웃(스크롤바 제거) 최적화
+
 - **1.1.1 / 2026-01** : 플랫폼별 최적화 및 리팩토링
-  - 윈도우/Mac 환경별 폰트 최적화 (`Inconsolata`, `Consolas`, `Menlo` 등)
-  - 환경 감지 로직 중앙화 (`util.js` 신규 생성)
-  - `index.html`, `planisphere.js` 환경 감지 코드 리팩토링
-  - 범례(Legend) 위치 및 간격 미세 조정
 
 - **1.1.0 / 2026-01** : 사파리 브라우저 적용 및 ES6 모듈 리팩토링
   - 맥OS 사파리에서 SVG.js가 제대로 작동하지 않는 버그 수정

@@ -3,12 +3,13 @@
 별자리판 JS 프로젝트의 주요 모듈과 클래스에 대한 상세 API 문서입니다. 모든 모듈은 ES6 모듈 형식을 따릅니다.
 
 ## 목차
-- [astronomy.js (천문학 계산)](#astronomyjs-천문학-계산)
-- [planisphere.js (메인 컨트롤러)](#planispherejs-메인-컨트롤러)
-- [renderers.js (렌더링)](#renderersjs-렌더링)
-- [util.js (유틸리티)](#utiljs-유틸리티)
-- [models.js (데이터)](#modelsjs-데이터)
-- [constants.js (상수)](#constantsjs-상수)
+- [astronomy.js (천문학 계산)](core/astronomy.js)
+- [planisphere.js (메인 컨트롤러)](core/planisphere.js)
+- [app/ (애플리케이션 UI)](app/)
+- [renderers.js (렌더링)](core/renderers.js)
+- [util.js (유틸리티)](core/util.js)
+- [models.js (데이터)](core/models.js)
+- [constants.js (상수)](core/constants.js)
 
 ---
 
@@ -53,21 +54,32 @@
 
 ---
 
-## planisphere.js (메인 컨트롤러)
-
-애플리케이션의 메인 진입점으로, 상태 관리와 렌더링을 조율합니다.
-
-### Planisphere (Class)
-별자리판의 메인 인터페이스를 제공합니다.
-
-- `constructor(options)`: 설정 객체를 받아 별자리판 초기화
-  - `options.wrapperDomId`: SVG를 담을 컨테이너 ID
-  - `options.currentDate`: 초기 날짜
-  - `options.lon/lat`: 관측 위치
-- `setDateTime(date)`: 날짜 및 시각 변경 및 리렌더링
-- `setLocation(lon, lat)`: 관측 위치 변경
-- `setTheme(themeName)`: 테마 변경 ('default', 'dark', 'light')
 - `render()`: 별자리판 강제 업데이트
+
+---
+
+## app/ (애플리케이션 UI)
+
+사용자 인터페이스와 상호작용을 담당하는 모듈입니다.
+
+### main.js (Orchestrator)
+애플리케이션의 엔트리 포인트입니다. 모든 컴포넌트를 초기화하고 조율합니다.
+
+### ControlPanel (Class)
+날짜와 시간 조절 UI를 관리합니다.
+- `constructor(planisphere)`: 플라니스피어 인스턴스를 받아 초기화
+- `initNow()`: 현재 시각으로 설정
+- `adjust(unit, delta)`: 년/월/일/시/분 단위 증감 조절
+
+### SettingsModal (Class)
+테마 설정과 도움말 모달을 관리합니다.
+- `open(showWelcome)`: 모달 열기 (환영 메시지 포함 여부 선택)
+- `close()`: 모달 닫기
+
+### LocationModal (Class)
+지도를 통한 관측 위치 선택 모달을 관리합니다.
+- `open(lon, lat)`: 현재 위치를 마커로 표시하며 지도 열기
+- `onApply(callback)`: 위치 적용 시 콜백 실행 (lon, lat 반환)
 
 ---
 

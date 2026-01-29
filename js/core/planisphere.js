@@ -515,7 +515,7 @@ class Planisphere {
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
         if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
-        if (Math.abs(lat) < 20) throw new Error("적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.");
+        if (Math.abs(lat) < 10) throw new Error("적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
         this.styles = Object.assign({}, Planisphere.defaultStyles, styles);
@@ -677,8 +677,8 @@ class Planisphere {
         if (lat < -90 || lat > 90) {
             throw new RangeError('위도(lat)는 -90° ~ +90° 범위여야 합니다.');
         }
-        if (Math.abs(lat) < 20) {
-            throw new RangeError('적도 ±20° 이내에서는 별자리판 생성이 불안정합니다.');
+        if (Math.abs(lat) < 10) {
+            throw new RangeError('적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.');
         }
 
         // AstroTime 재생성
