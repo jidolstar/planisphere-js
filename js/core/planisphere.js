@@ -1,7 +1,7 @@
 /**
  * @fileoverview 별자리판 JS - 메인 컨트롤러
  * @author 지용호 <jidolstar@gmail.com>
- * @version 1.0.0
+ * @version 1.1.3
  * @license MIT
  *
  * @description
@@ -48,6 +48,7 @@ import { Env } from './util.js';
 import {
     DEFAULT_LOCATION,
     DEFAULT_TIMEZONE,
+    DEFAULT_TIMEZONE_NAME,
     SPECTRAL_COLORS,
     STORAGE_KEYS
 } from './constants.js';
@@ -152,6 +153,8 @@ class InputHandler {
     setRotation(angle) {
         this.#currentRotation = angle;
         this.#lastRotation = angle;
+        // 드래그 중인 상태에서 강제 설정될 경우를 대비해 초기화
+        this.#dragging = false;
     }
 
     /**
@@ -506,10 +509,12 @@ class Planisphere {
         lon = 126.98,
         lat = 37.57,
         dgmt = 9,
+        tzName = DEFAULT_TIMEZONE_NAME,
         styles = {},
         version = '1.0.0'
     }) {
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
+        this.tzName = tzName;
         this.limitDE = -70 * AstroMath.D2R
         //this.limitDE = -(90 - Math.abs(lat) + 5) * AstroMath.D2R;
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
@@ -650,27 +655,23 @@ class Planisphere {
         const D = dateObj.getDate();
         const h = dateObj.getHours();
         const m = dateObj.getMinutes();
+        const s = dateObj.getSeconds();
 
-        const jd = AstroTime.jd(Y, M, D, h, m, 0);
-        this.lst = this.astroTime.LCT2LST(jd);
+        this.lct = AstroTime.jd(Y, M, D, h, m, s);
+        this.lst = this.astroTime.LCT2LST(this.lct);
+
+        // 회전값 갱신 및 InputHandler 동기화 (false: 수동 변경 시 jump 방지)
         this.#rotateCurrentDate(false);
-
-        // 연도 변경 시 날짜환 다시 그리기
-        // if (this._lastYear !== Y) {
-        //     this._lastYear = Y;
-        //     this._lastYear = Y;
-        //     this.#skyGroup.clear();
-        //     this.renderSkyPanel();
-        //     this.#applyTransform();
-        // }
     }
 
     /**
      * Public API: 관측 위치 변경
      * @param {number} lon - 경도 (-180 ~ 180)
      * @param {number} lat - 위도 (-90 ~ 90)
+     * @param {number} [dgmt] - (Optional) 새로운 UTC 오프셋. 생략 시 기존 값 유지.
+     * @param {string} [tzName] - (Optional) 새로운 타임존 이름. 생략 시 기존 값 유지.
      */
-    setLocation(lon, lat) {
+    setLocation(lon, lat, dgmt, tzName) {
         // 경도 정규화
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
@@ -682,11 +683,17 @@ class Planisphere {
         }
 
         // AstroTime 재생성
-        this.astroTime = new AstroTime(this.astroTime.dgmt, lon, lat);
+        const newDgmt = (dgmt !== undefined) ? dgmt : this.astroTime.dgmt;
+        if (tzName !== undefined) this.tzName = tzName;
+
+        this.astroTime = new AstroTime(newDgmt, lon, lat);
         this.deltaCulminationTime = this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon;
 
-        // 투영 재생성
+        // 투영 재생성 및 갱신
         this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
+
+        // LST 갱신 (위치 필수 업데이트 항목)
+        this.lst = this.astroTime.LCT2LST(this.lct);
 
         // 전체 다시 그리기
         this.#skyGroup.clear();
@@ -729,17 +736,17 @@ class Planisphere {
         this.#render();
         this.#rotateCurrentDate(false);
     }
-    #rotateCurrentDate(isInit = true) {
-        //Local Sidereal Time 만큼 회전시켜준다.
-        //즉, 남중해야할 별이 화면 아래로 향하게 한다.
+    #rotateCurrentDate(isResetInput = true) {
+        // Local Sidereal Time 만큼 회전시켜준다.
+        // 즉, 남중해야할 별이 화면 아래로 향하게 한다.
         let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
         this.#skyRotation = rotation;
-        if (isInit) this.#topPanelRotation = rotation;
+        if (isResetInput) this.#topPanelRotation = rotation;
 
-        // InputHandler를 통해 변환 적용
-        if (isInit) {
-            this.#inputHandler.setRotation(rotation);
-        }
+        // InputHandler의 상태를 현재 계산된 회전값으로 강제 동기화하여 
+        // 다음 드래그 시 '튀는' 현상을 방지합니다.
+        this.#inputHandler.setRotation(rotation);
+
         this.#applyTransform(rotation, this.#inputHandler.scale, this.#inputHandler.panX, this.#inputHandler.panY);
     }
 

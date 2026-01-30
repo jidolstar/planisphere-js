@@ -141,7 +141,14 @@
         </div>
 
         <div class="ps-map-info">
-          현재 선택: <span id="ps-selected-location-text">지도를 클릭해 주세요</span>
+          <div>현재 선택: <span id="ps-selected-location-text">지도를 클릭해 주세요</span></div>
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+            <span>시간대 (DGMT):</span>
+            <input type="number" id="ps-map-dgmt" step="0.5"
+              style="width: 60px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 8px; border-radius: 4px;">
+            <span id="ps-map-tz-name"
+              style="font-size: 11px; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+          </div>
         </div>
 
         <div class="ps-map-footer">

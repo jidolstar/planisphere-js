@@ -6,8 +6,8 @@
  */
 
 import Planisphere from '../core/planisphere.js';
-import { formatDMS } from '../core/util.js';
-import { STORAGE_KEYS, DEFAULT_LOCATION } from '../core/constants.js';
+import { formatDMS, TimezoneService } from '../core/util.js';
+import { STORAGE_KEYS, DEFAULT_LOCATION, DEFAULT_TIMEZONE_NAME } from '../core/constants.js';
 import LocationModal from './location-modal.js';
 import ControlPanel from './control-panel.js';
 import SettingsModal from './settings-modal.js';
@@ -34,6 +34,12 @@ let initialLoc = DEFAULT_LOCATION;
 if (savedLocStr) {
     try {
         initialLoc = JSON.parse(savedLocStr);
+        if (initialLoc.dgmt === undefined) {
+            initialLoc.dgmt = TimezoneService.getGeographicOffset(initialLoc.lon);
+        }
+        if (initialLoc.tzName === undefined) {
+            initialLoc.tzName = DEFAULT_TIMEZONE_NAME;
+        }
     } catch (e) {
         console.error("Failed to parse saved location", e);
     }
@@ -45,7 +51,8 @@ const planisphere = new Planisphere({
     currentDate: new Date(),
     lon: initialLoc.lon,
     lat: initialLoc.lat,
-    dgmt: 9,
+    dgmt: initialLoc.dgmt,
+    tzName: initialLoc.tzName,
     styles: initialStyles,
     version: version
 });
@@ -60,10 +67,15 @@ const $locEdit = document.getElementById('ps-location-edit');
 
 let currentLon = initialLoc.lon;
 let currentLat = initialLoc.lat;
+let currentDgmt = initialLoc.dgmt;
+let currentTzName = initialLoc.tzName;
 
 const updateLocationDisplay = () => {
     if ($locText) {
-        $locText.textContent = `${formatDMS(currentLat, true)} / ${formatDMS(currentLon, false)}`;
+        const dmsText = `${formatDMS(currentLat, true)} / ${formatDMS(currentLon, false)}`;
+        const gmtOffset = `(GMT ${currentDgmt >= 0 ? '+' : ''}${currentDgmt})`;
+        const tzNameText = currentTzName ? ` [${currentTzName}]` : '';
+        $locText.textContent = `${dmsText} ${gmtOffset}${tzNameText}`;
     }
 };
 
@@ -72,17 +84,28 @@ const locationModal = new LocationModal({
     canvasId: 'ps-map-canvas',
     wrapperId: 'ps-map-wrapper',
     infoId: 'ps-selected-location-text',
+    dgmtInputId: 'ps-map-dgmt',
+    tzInfoId: 'ps-map-tz-name',
     applyBtnId: 'ps-map-apply',
     cancelBtnId: 'ps-map-cancel',
     closeBtnId: 'ps-map-modal-close',
     restrictedZoneId: 'ps-map-restricted-zone',
     imageSrc: 'images/world_map.jpg',
-    onApply: (lon, lat) => {
+    onApply: (lon, lat, dgmt, tzName) => {
         currentLon = lon;
         currentLat = lat;
+        currentDgmt = dgmt;
+        currentTzName = tzName;
         updateLocationDisplay();
-        planisphere.setLocation(currentLon, currentLat);
-        localStorage.setItem(STORAGE_KEYS.LOCATION, JSON.stringify({ lon: currentLon, lat: currentLat }));
+
+        planisphere.setLocation(currentLon, currentLat, currentDgmt, currentTzName);
+
+        localStorage.setItem(STORAGE_KEYS.LOCATION, JSON.stringify({
+            lon: currentLon,
+            lat: currentLat,
+            dgmt: currentDgmt,
+            tzName: currentTzName
+        }));
     }
 });
 
@@ -90,6 +113,6 @@ updateLocationDisplay();
 
 if ($locEdit) {
     $locEdit.onclick = () => {
-        locationModal.open(currentLon, currentLat);
+        locationModal.open(currentLon, currentLat, currentDgmt, currentTzName);
     };
 }

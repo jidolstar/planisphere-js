@@ -7,11 +7,9 @@
  * @description
  * 세계 지도를 이용한 관측 위치 선택 기능을 제공합니다.
  * world_map.jpg (North-Up, Pacific-centered Equirectangular) 투영법에 최적화되었습니다.
- * - 위도: 90N이 위(0), 90S가 아래(1)
- * - 경도: 본초 자오선(0)이 양쪽 끝, 180도가 중심
  */
 
-import { formatDMS } from '../core/util.js';
+import { formatDMS, TimezoneService } from '../core/util.js';
 
 export default class LocationModal {
     constructor(options) {
@@ -23,6 +21,8 @@ export default class LocationModal {
         this.$cancelBtn = document.getElementById(options.cancelBtnId);
         this.$closeBtn = document.getElementById(options.closeBtnId);
         this.$restricted = document.getElementById(options.restrictedZoneId);
+        this.$dgmtInput = document.getElementById(options.dgmtInputId);
+        this.$tzInfo = document.getElementById(options.tzInfoId);
         this.ctx = this.$canvas.getContext('2d');
         this.onApply = options.onApply;
 
@@ -32,6 +32,8 @@ export default class LocationModal {
         // 상태 변수
         this.tempLon = 0;
         this.tempLat = 0;
+        this.tempDgmt = 0;
+        this.tempTzName = '';
         this.zoom = 1.0;
         this.minZoom = 1.0;
         this.maxZoom = 10.0;
@@ -47,9 +49,11 @@ export default class LocationModal {
         this._initEvents();
     }
 
-    open(lon, lat) {
+    open(lon, lat, dgmt, tzName) {
         this.tempLon = lon;
         this.tempLat = lat;
+        this.tempDgmt = dgmt;
+        this.tempTzName = tzName || '';
         this.zoom = 1.0;
 
         this.$modal.style.display = 'flex';
@@ -251,6 +255,8 @@ export default class LocationModal {
         const isRestricted = Math.abs(this.tempLat) <= 10;
         const infoText = `${formatDMS(this.tempLat, true)} / ${formatDMS(this.tempLon, false)}`;
 
+        if (this.$dgmtInput) this.$dgmtInput.value = this.tempDgmt;
+
         if (isRestricted) {
             this.$info.innerHTML = `<span style="color:#ffcc00">${infoText}</span> <span style="color:#ff4444; font-size:11px; margin-left:8px;">⚠️ 사용 제한 (±10°)</span>`;
             this.$applyBtn.disabled = true;
@@ -329,8 +335,12 @@ export default class LocationModal {
             if (this.isMoving) onUp(this.lastX, this.lastY);
         });
 
+        this.$dgmtInput.onchange = () => {
+            this.tempDgmt = parseFloat(this.$dgmtInput.value) || 0;
+        };
+
         this.$applyBtn.onclick = () => {
-            if (this.onApply) this.onApply(this.tempLon, this.tempLat);
+            if (this.onApply) this.onApply(this.tempLon, this.tempLat, this.tempDgmt, this.tempTzName);
             this.close();
         };
         this.$cancelBtn.onclick = this.$closeBtn.onclick = () => this.close();
@@ -372,8 +382,35 @@ export default class LocationModal {
         this.tempLon = Math.max(-180, Math.min(180, this.tempLon));
         this.tempLat = Math.max(-90, Math.min(90, this.tempLat));
 
+        // 타임존 자동 검색 (동적 데이터 로드 기반)
+        this._autoLookupTimezone(this.tempLat, this.tempLon);
+
         this._updateUI();
         this.draw();
+    }
+
+    async _autoLookupTimezone(lat, lon) {
+        if (this.$tzInfo) this.$tzInfo.textContent = "타임존 로딩중...";
+
+        const success = await TimezoneService.loadLibrary();
+        if (success) {
+            const tzName = TimezoneService.getTimezoneName(lat, lon);
+
+            if (tzName) {
+                this.tempDgmt = TimezoneService.getOffsetFromTimezone(tzName);
+                this.tempTzName = tzName;
+                if (this.$tzInfo) this.$tzInfo.textContent = tzName;
+            } else {
+                this.tempDgmt = TimezoneService.getGeographicOffset(lon);
+                this.tempTzName = "";
+                if (this.$tzInfo) this.$tzInfo.textContent = "지리적 표준시 사용";
+            }
+        } else {
+            this.tempDgmt = TimezoneService.getGeographicOffset(lon);
+            this.tempTzName = "";
+            if (this.$tzInfo) this.$tzInfo.textContent = "지리적 표준시 사용";
+        }
+        this._updateUI();
     }
 
     close() {

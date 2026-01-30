@@ -33,6 +33,11 @@ export const DEFAULT_LOCATION = {
  * const utcOffset = DEFAULT_TIMEZONE; // 9
  */
 export const DEFAULT_TIMEZONE = 9;
+/** 
+ * 기본 타임존 이름: Asia/Seoul
+ * @constant {string}
+ */
+export const DEFAULT_TIMEZONE_NAME = 'Asia/Seoul';
 
 /**
  * 표시할 별의 등급 제한

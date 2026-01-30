@@ -60,6 +60,7 @@
 .ps-modal-body {
   padding: 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
 }
 

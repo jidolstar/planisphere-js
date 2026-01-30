@@ -82,3 +82,108 @@ export function formatDMS(degrees, isLat) {
 
     return `${direction} ${d}° ${m}' ${s}"`;
 }
+
+/**
+ * 타임존 관련 서비스
+ * 외부 라이브러리(tz-lookup)를 동기적으로 로드하고 좌표 기반 오프셋을 계산합니다.
+ */
+export const TimezoneService = {
+    _lookup: null,
+    _loading: false,
+
+    /**
+     * 외부 타임존 라이브러리를 동적으로 로드합니다.
+     * @returns {Promise<boolean>} 로드 성공 여부
+     */
+    async loadLibrary() {
+        if (this._lookup) return true;
+        if (this._loading) return false;
+
+        this._loading = true;
+        try {
+            const url = 'https://unpkg.com/tz-lookup';
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Network error: ${response.status}`);
+            const script = await response.text();
+
+            try {
+                const factory = new Function('module', 'exports', script + '\nreturn module.exports;');
+                const mockModule = { exports: {} };
+                const result = factory(mockModule, mockModule.exports);
+                this._lookup = (typeof result === 'function') ? result : mockModule.exports;
+            } catch (evalErr) {
+                const simpleFactory = new Function(script + '\nreturn typeof tzlookup !== "undefined" ? tzlookup : null;');
+                this._lookup = simpleFactory();
+            }
+
+            if (typeof this._lookup !== 'function') {
+                throw new Error("Invalid library format");
+            }
+            return true;
+        } catch (e) {
+            return false;
+        } finally {
+            this._loading = false;
+        }
+    },
+
+    /**
+     * 위도/경도를 기반으로 IANA 타임존 이름을 반환합니다.
+     * @param {number} lat 
+     * @param {number} lon 
+     * @returns {string|null}
+     */
+    getTimezoneName(lat, lon) {
+        if (!this._lookup) return null;
+        try {
+            return this._lookup(lat, lon);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    /**
+     * 타임존 이름을 기반으로 현재 시각의 UTC 오프셋(시간 단위)을 반환합니다.
+     * @param {string} tzName 
+     * @param {Date} [date] 
+     * @returns {number}
+     */
+    getOffsetFromTimezone(tzName, date = new Date()) {
+        try {
+            const str = date.toLocaleString('en-US', { timeZone: tzName, timeZoneName: 'short' });
+            const match = str.match(/[+-]\d+/);
+            if (match) {
+                const offsetStr = match[0];
+                return parseInt(offsetStr, 10);
+            }
+
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: tzName,
+                timeZoneName: 'longOffset'
+            }).formatToParts(date);
+
+            const offsetPart = parts.find(p => p.type === 'timeZoneName');
+            if (offsetPart) {
+                const m = offsetPart.value.match(/GMT([+-]\d+):?(\d+)?/);
+                if (m) {
+                    const hours = parseInt(m[1], 10);
+                    const minutes = m[2] ? parseInt(m[2], 10) : 0;
+                    return hours + (minutes / 60) * (hours < 0 ? -1 : 1);
+                }
+            }
+        } catch (e) {
+            // Error handled by fallback
+        }
+        return Math.round(date.getTimezoneOffset() / -60);
+    },
+
+    /**
+     * 경도를 기반으로 대략적인 표준시간대 오프셋(DGMT)을 계산합니다.
+     * @param {number} lon - 경도 (-180 ~ 180)
+     * @returns {number} 시간대 오프셋 (정수)
+     */
+    getGeographicOffset(lon) {
+        return Math.round(lon / 15);
+    }
+};
+
