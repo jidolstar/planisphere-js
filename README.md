@@ -162,6 +162,7 @@ planisphere-js/
 | 클래스/객체 | 설명 |
 |------------|------|
 | `Env` | 환경 감지 (Mobile, Safari, Mac, Windows 등) |
+| `TimezoneService` | 외부 라이브러리(`tz-lookup`) 동적 로드 및 타임존 오프셋 계산 |
 
 ### planisphere.js (컨트롤러)
 
@@ -172,7 +173,7 @@ planisphere-js/
 
 **Public API:**
 - `setDateTime(date)` - 날짜/시간 설정
-- `setLocation(lon, lat)` - 관측 위치 설정
+- `setLocation(lon, lat, dgmt, tzName)` - 관측 위치 및 타임존 설정
 - `setTheme(themeName)` - 테마 변경
 - `render()` - 명시적 렌더링
 
@@ -208,11 +209,13 @@ npm run test:watch
 
 ## 버전
 
-- **1.2.0 / 2026-01** : 프로젝트 구조 리팩토링 및 지도 기능 개선
-  - **구조 리팩토링**: `js/core`(엔진)와 `js/app`(UI 로직)으로 모듈 분리
-  - **UI 모듈화**: `index.html`의 인라인 스크립트를 `main.js`, `ControlPanel`, `SettingsModal`로 추출
-  - **지도 매핑 개선**: 새로운 세계 지도(`world_map.jpg`) 도입 및 좌표 매핑 수식 정밀화
-  - **안정성**: 테스트 경로 이동 및 모달 레이아웃(스크롤바 제거) 최적화
+- **1.2.0 / 2026-01** : 타임존 시스템 고도화 및 프로젝트 리팩토링
+  - **고급 타임존 자동 검색**: `tz-lookup` 라이브러리를 동적으로 로드하여 전 세계 정치적 타임존(IANA)을 자동으로 감지
+  - **하이브리드 전략**: 네트워크/데이터 부재 시 경도 기반 지표 계산(Geographic Fallback) 및 사용자 수동 오프셋 설정 지원
+  - **데이터 유지(Persistence)**: 선택한 위치와 타임존 이름(`Asia/Seoul` 등)을 `localStorage`에 저장 및 복구
+  - **구조 리팩토링**: `js/core`(엔진)와 `js/app`(UI 로직)으로 모듈 분리 및 UI 컴포넌트(`ControlPanel`, `LocationModal` 등) 모듈화
+  - **지도 매핑 개선**: 태평양 중심의 새로운 세계 지도(`world_map.jpg`) 도입 및 30도 오프셋 보정 수식 정밀화
+  - **최적화**: 디버그 로그 제거, 모달 레이아웃 최적화, 스크롤바 제거
 
 - **1.1.1 / 2026-01** : 플랫폼별 최적화 및 리팩토링
 
@@ -244,6 +247,7 @@ npm run test:watch
 
 - **프론트엔드**: Vanilla JavaScript (ES6 모듈)
 - **렌더링**: [SVG.js](https://svgjs.dev/) 3.2
+- **외부 데이터**: [tz-lookup](https://github.com/darkskyapp/tz-lookup) (타임존 검색용, UNPKG를 통한 동적 로드)
 - **테스트**: [Vitest](https://vitest.dev/)
 - **배포**: GitHub Pages
 - **빌드 도구**: 없음 (브라우저 직접 실행)

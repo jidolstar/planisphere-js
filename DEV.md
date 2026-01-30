@@ -2,9 +2,11 @@
 
 ## Docker로 개발 환경 실행
 
-### 요구사항
-- Docker
-- Docker Compose
+### 요구사항 및 의존성
+- **SVG.js 3.2**: 렌더링 엔진 (CDN 로드)
+- **tz-lookup**: 타임존 데이터 (런타임에 UNPKG에서 동적 로드)
+- **Docker** (로컬 실행 권장)
+- **Node.js 18+** (단위 테스트 실행용)
 
 ### 실행 방법
 
@@ -125,3 +127,16 @@ js/__tests__/
 
 - Julian Day: https://planetcalc.com/503/
 - Sidereal Time: https://aa.usno.navy.mil/data/siderealtime
+
+## 주요 구현 참고사항
+
+### 세계 지도 좌표 매핑 (world_map.jpg)
+- **투영 방식**: Equirectangular (Plate Carrée)
+- **중심**: 태평양 (경도 180°) 중심
+- **오프셋**: 본초 자오선(0°)이 이미지의 왼쪽 끝에서 약 30도(8.3%) 지점에 위치함.
+- **수식**: `xRatio = ((lon + 30 + 360) % 360) / 360`
+
+### 타임존 하이브리드 전략
+1. **정밀 검색**: `TimezoneService`를 통해 `tz-lookup` 라이브러리를 동적으로 `fetch`하여 IANA 타임존 명칭과 오프셋을 추출합니다.
+2. **지리적 폴백**: 라이브러리 로드가 실패하거나 해당 좌표의 타임존 데이터가 없을 경우, 경도 15도당 1시간(`round(lon/15)`)으로 계산하는 물리적 표준시를 사용합니다.
+3. **수동 설정**: 사용자가 UI에서 오프셋을 직접 수정하면 자동 계산값보다 우선순위를 가집니다.

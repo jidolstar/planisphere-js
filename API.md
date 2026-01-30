@@ -49,14 +49,14 @@
 
 - `hor2equ(lst, lat)` / `equ2hor(lst, lat)`: 좌표 변환 행렬 생성
 
-### EquiDistanceProjection (Class)
-3D 천구 좌표를 2D 평면 좌표로 투영합니다 (등거리 방위 투영).
+### Planisphere (Class)
+메인 컨트롤러입니다.
 
----
-
+- `constructor(options)`: 별자리판 초기화
+- `setDateTime(date)`: 날짜/시간 설정
+- `setLocation(lon, lat, dgmt, tzName)`: 장소 및 타임존 설정
+- `setTheme(themeName)`: 테마 설정
 - `render()`: 별자리판 강제 업데이트
-
----
 
 ## app/ (애플리케이션 UI)
 
@@ -78,8 +78,8 @@
 
 ### LocationModal (Class)
 지도를 통한 관측 위치 선택 모달을 관리합니다.
-- `open(lon, lat)`: 현재 위치를 마커로 표시하며 지도 열기
-- `onApply(callback)`: 위치 적용 시 콜백 실행 (lon, lat 반환)
+- `open(lon, lat, dgmt, tzName)`: 현재 정보를 초기값으로 지도 열기
+- `onApply(lon, lat, dgmt, tzName)`: 위치 적용 시 실행될 콜백 설정
 
 ---
 
@@ -104,6 +104,14 @@ SVG.js를 사용하여 모든 시각적 요소를 그립니다.
 - `isMac()`: macOS 플랫폼 여부
 - `isWindows()`: Windows 플랫폼 여부
 
+### TimezoneService (Object)
+타임존 데이터 로드 및 변환 기능을 제공합니다.
+
+- `async loadLibrary()`: `tz-lookup` 라이브러리를 UNPKG에서 동적으로 로드
+- `getTimezoneName(lat, lon)`: 특정 좌표의 IANA 타임존 이름 반환
+- `getOffsetFromTimezone(tzName, date)`: 타임존 이름 기준 현재 오프셋 계산
+- `getGeographicOffset(lon)`: 경도 기준 물리적 오프셋(fallback) 계산
+
 ---
 
 ## models.js (데이터)
@@ -118,5 +126,7 @@ SVG.js를 사용하여 모든 시각적 요소를 그립니다.
 
 - `DEFAULT_LOCATION`: 기본 위치 (서울)
 - `DEFAULT_TIMEZONE`: 기본 시간대 (UTC+9)
+- `DEFAULT_TIMEZONE_NAME`: 기본 타임존 이름 (`Asia/Seoul`)
 - `MAGNITUDE_LIMIT`: 표시 등급 제한 (기본 6등급)
 - `SPECTRAL_COLORS`: 별의 분광형별 색상 매핑
+- `STORAGE_KEYS`: 로컬 스토리지 키 정의
