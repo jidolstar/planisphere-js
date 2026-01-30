@@ -801,7 +801,14 @@ class Planisphere {
     }
 
     #applyTransform(rotation, scale, panX, panY) {
-        if (rotation == null) rotation = this.#skyRotation;
+        // 인자가 생략된 경우 (예: setTheme 호출 시) InputHandler의 현재 상태를 사용
+        if (rotation == null) rotation = this.#inputHandler.rotation;
+        if (scale == null) scale = this.#inputHandler.scale;
+        if (panX == null) panX = this.#inputHandler.panX;
+        if (panY == null) panY = this.#inputHandler.panY;
+
+        // 현재 회전상태를 저장 (동기화)
+        this.#skyRotation = rotation;
 
         this.#skyGroup.transform({
             rotate: rotation,
