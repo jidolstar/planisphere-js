@@ -233,6 +233,16 @@ export const THEMES = {
  * renderer.render();
  */
 export class SkyPanelRenderer {
+    #canvas;
+    #proj;
+    #styles;
+    #astroTime;
+    #radius;
+    #limitDE;
+    #intervalRA;
+    #intervalDE;
+    #currentDate;
+
     /**
      * SkyPanelRenderer 인스턴스 생성
      * @param {SVG.Container} canvas - SVG.js 캔버스 객체
@@ -246,24 +256,15 @@ export class SkyPanelRenderer {
      * @param {Date} currentDate - 현재 날짜/시간
      */
     constructor(canvas, proj, styles, astroTime, radius, limitDE, intervalRA, intervalDE, currentDate) {
-        /** @type {SVG.Container} */
-        this.canvas = canvas;
-        /** @type {EquiDistanceProjection} */
-        this.proj = proj;
-        /** @type {ThemeConfig} */
-        this.styles = styles;
-        /** @type {AstroTime} */
-        this.astroTime = astroTime;
-        /** @type {number} */
-        this.radius = radius;
-        /** @type {number} */
-        this.limitDE = limitDE;
-        /** @type {number} */
-        this.intervalRA = intervalRA;
-        /** @type {number} */
-        this.intervalDE = intervalDE;
-        /** @type {Date} */
-        this.currentDate = currentDate;
+        this.#canvas = canvas;
+        this.#proj = proj;
+        this.#styles = styles;
+        this.#astroTime = astroTime;
+        this.#radius = radius;
+        this.#limitDE = limitDE;
+        this.#intervalRA = intervalRA;
+        this.#intervalDE = intervalDE;
+        this.#currentDate = currentDate;
     }
 
     /**
@@ -277,13 +278,12 @@ export class SkyPanelRenderer {
      * 5. 별자리명 (가장 위)
      */
     render() {
-        const diameter = this.radius * 2;
+        const diameter = this.#radius * 2;
         const cx = 0;
         const cy = 0;
-        const year = this.currentDate.getFullYear();
-        const daysInYear = this.astroTime.daysInYear(year);
+        const year = this.#currentDate.getFullYear();
+        const daysInYear = this.#astroTime.daysInYear(year);
         const dailyStep = AstroMath.TPI / daysInYear;
-        let path = '';
 
         // 날짜 눈금 부분
         this.#renderDateRing(cx, cy, diameter, year, dailyStep);
@@ -303,41 +303,41 @@ export class SkyPanelRenderer {
     }
 
     #renderDateRing(cx, cy, diameter, year, dailyStep) {
-        const canvas = this.canvas;
+        const canvas = this.#canvas;
 
         // 날짜환 원들
         canvas.circle(diameter + 85).center(cx, cy).stroke({
-            width: this.styles.dateCircleOuterStroke.width,
-            color: this.styles.dateCircleOuterStroke.color
+            width: this.#styles.dateCircleOuterStroke.width,
+            color: this.#styles.dateCircleOuterStroke.color
         });
-        canvas.circle(diameter + 85).center(cx, cy).fill(this.styles.dateCircleBgColor);
+        canvas.circle(diameter + 85).center(cx, cy).fill(this.#styles.dateCircleBgColor);
         canvas.circle(diameter).center(cx, cy).stroke({
-            width: this.styles.dateCircleInnerStroke.width,
-            color: this.styles.dateCircleInnerStroke.color
+            width: this.#styles.dateCircleInnerStroke.width,
+            color: this.#styles.dateCircleInnerStroke.color
         });
-        canvas.circle(diameter).center(cx, cy).fill(this.styles.bgColor);
+        canvas.circle(diameter).center(cx, cy).fill(this.#styles.bgColor);
         canvas.circle(diameter + 45).center(cx, cy).fill('none').stroke({
             width: 1,
-            color: this.styles.dateColor
+            color: this.#styles.dateColor
         });
 
         // 월 표시
         for (let month = 1; month <= 12; month++) {
             const midDay = AstroTime.monthMidDay(year, month) + 1;
-            const hour = this.astroTime.hourForDateRing(year, month, midDay);
+            const hour = this.#astroTime.hourForDateRing(year, month, midDay);
             const lct = AstroTime.jd(year, month, midDay, hour, 0, 0);
-            const lst = this.astroTime.LCT2LST(lct);
+            const lst = this.#astroTime.LCT2LST(lct);
             const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-            let { x, y } = this.proj.project(ra + dailyStep / 2, this.limitDE);
+            let { x, y } = this.#proj.project(ra + dailyStep / 2, this.#limitDE);
             let t = Math.atan2(y, x);
-            let r = this.radius + 30;
+            let r = this.#radius + 30;
             x = r * Math.cos(t);
             y = r * Math.sin(t);
             canvas.text(`${month}월`).attr('text-anchor', 'middle').center(cx + x, cy + y)
                 .transform({ rotate: AstroMath.R2D * (Math.atan2(y, x) - AstroMath.HPI) })
                 .font({
-                    fill: this.styles.dateColor,
-                    size: this.styles.dateMonthTextSize,
+                    fill: this.#styles.dateColor,
+                    size: this.#styles.dateMonthTextSize,
                     family: FONT_FAMILY,
                     opacity: 0.8
                 });
@@ -346,22 +346,22 @@ export class SkyPanelRenderer {
         // 월 경계선
         let path = '';
         for (let month = 1; month <= 12; month++) {
-            const hour = this.astroTime.hourForDateRing(year, month, 1);
+            const hour = this.#astroTime.hourForDateRing(year, month, 1);
             const lct = AstroTime.jd(year, month, 1, hour, 0, 0);
-            const lst = this.astroTime.LCT2LST(lct);
+            const lst = this.#astroTime.LCT2LST(lct);
             const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-            const { x, y } = this.proj.project(ra + dailyStep / 2, this.limitDE);
+            const { x, y } = this.#proj.project(ra + dailyStep / 2, this.#limitDE);
             const t = Math.atan2(y, x);
-            const r1 = this.radius + 17;
+            const r1 = this.#radius + 17;
             const x1 = r1 * Math.cos(t);
             const y1 = r1 * Math.sin(t);
-            const r2 = this.radius + 42;
+            const r2 = this.#radius + 42;
             const x2 = r2 * Math.cos(t);
             const y2 = r2 * Math.sin(t);
             path += `M${cx + x1} ${cy + y1} L${cx + x2} ${cy + y2} `;
         }
         canvas.path(path).fill('none').stroke({
-            color: this.styles.dateColor,
+            color: this.#styles.dateColor,
             width: 1,
             linecap: 'round',
             linejoin: 'round',
@@ -374,13 +374,13 @@ export class SkyPanelRenderer {
         for (let month = 1; month <= 12; month++) {
             const days = daysPerMonth[month - 1];
             for (let dayOfMonth = 1; dayOfMonth <= days; dayOfMonth++) {
-                const hour = this.astroTime.hourForDateRing(year, month, dayOfMonth);
+                const hour = this.#astroTime.hourForDateRing(year, month, dayOfMonth);
                 const lct = AstroTime.jd(year, month, dayOfMonth, hour, 0, 0);
-                const lst = this.astroTime.LCT2LST(lct);
+                const lst = this.#astroTime.LCT2LST(lct);
                 const ra = AstroTime.jd2Time(lst) * AstroMath.H2R;
-                const { x, y } = this.proj.project(ra + dailyStep / 2, this.limitDE);
+                const { x, y } = this.#proj.project(ra + dailyStep / 2, this.#limitDE);
                 const t = Math.atan2(y, x);
-                const r1 = this.radius + 2;
+                const r1 = this.#radius + 2;
                 const x1 = r1 * Math.cos(t);
                 const y1 = r1 * Math.sin(t);
                 let r2 = r1 + 2;
@@ -391,8 +391,8 @@ export class SkyPanelRenderer {
                         canvas.text(`${dayOfMonth}`).attr('text-anchor', 'middle').center(cx + x2txt, cy + y2txt)
                             .transform({ rotate: AstroMath.R2D * (Math.atan2(y2txt, x2txt) - AstroMath.HPI) })
                             .font({
-                                fill: this.styles.dateColor,
-                                size: this.styles.dateDayTextSize,
+                                fill: this.#styles.dateColor,
+                                size: this.#styles.dateDayTextSize,
                                 family: FONT_FAMILY,
                                 opacity: 0.8
                             });
@@ -409,7 +409,7 @@ export class SkyPanelRenderer {
             }
         }
         canvas.path(path).fill('none').stroke({
-            color: this.styles.dateColor,
+            color: this.#styles.dateColor,
             width: 1,
             linecap: 'round',
             linejoin: 'round',
@@ -420,25 +420,25 @@ export class SkyPanelRenderer {
     #renderRALines(cx, cy) {
         // 적경선
         let path = '';
-        for (let ra = 0; ra < 24; ra = ra + this.intervalRA) {
-            const { x, y } = this.proj.project(ra * AstroMath.H2R, this.limitDE);
+        for (let ra = 0; ra < 24; ra = ra + this.#intervalRA) {
+            const { x, y } = this.#proj.project(ra * AstroMath.H2R, this.#limitDE);
             path += `M${cx} ${cy} L${cx + x} ${cy + y} `;
         }
-        this.canvas.path(path).fill('none').stroke({
-            color: this.styles.raLineColor,
-            width: this.styles.raLineStroke,
+        this.#canvas.path(path).fill('none').stroke({
+            color: this.#styles.raLineColor,
+            width: this.#styles.raLineStroke,
             linecap: 'round',
             linejoin: 'round',
             opacity: 0.4
         });
 
         // 적경값
-        for (let ra = 0; ra < 24; ra = ra + this.intervalRA) {
-            const { x, y } = this.proj.project(ra * AstroMath.H2R, -3 * AstroMath.D2R);
-            this.canvas.text(`${ra}h`).attr('text-anchor', 'middle').center(cx + x, cy + y)
+        for (let ra = 0; ra < 24; ra = ra + this.#intervalRA) {
+            const { x, y } = this.#proj.project(ra * AstroMath.H2R, -3 * AstroMath.D2R);
+            this.#canvas.text(`${ra}h`).attr('text-anchor', 'middle').center(cx + x, cy + y)
                 .font({
-                    fill: this.styles.raTextColor,
-                    size: this.styles.raTextSize,
+                    fill: this.#styles.raTextColor,
+                    size: this.#styles.raTextSize,
                     family: FONT_FAMILY
                 })
                 .transform({ rotate: AstroMath.R2D * (Math.atan2(y, x) - AstroMath.HPI) });
@@ -447,18 +447,18 @@ export class SkyPanelRenderer {
 
     #renderDECLines(cx, cy) {
         // 적위선
-        for (let dec = -90.0; dec < 90.0; dec += this.intervalDE) {
-            const { x, y } = this.proj.project(0, dec * AstroMath.D2R);
-            if (Math.hypot(x, y) < this.proj.screenRadius) {
-                let color = this.styles.decLineColor1;
+        for (let dec = -90.0; dec < 90.0; dec += this.#intervalDE) {
+            const { x, y } = this.#proj.project(0, dec * AstroMath.D2R);
+            if (Math.hypot(x, y) < this.#proj.screenRadius) {
+                let color = this.#styles.decLineColor1;
                 let opacity = 0.4;
                 if (Math.abs(dec) < 0.00001) {
-                    color = this.styles.decLineColor2;
+                    color = this.#styles.decLineColor2;
                     opacity = 0.7;
                 }
-                this.canvas.circle(x * 2).center(cx, cy).fill('none').stroke({
+                this.#canvas.circle(x * 2).center(cx, cy).fill('none').stroke({
                     color,
-                    width: this.styles.decLineStroke,
+                    width: this.#styles.decLineStroke,
                     opacity
                 });
             }
@@ -468,18 +468,18 @@ export class SkyPanelRenderer {
     #renderConstellationLines(cx, cy) {
         let path = '';
         for (let i = 0; i < CONSTELLATION_LINES.length; i += 4) {
-            const { x: x1, y: y1 } = this.proj.project(CONSTELLATION_LINES[i], CONSTELLATION_LINES[i + 1]);
-            const { x: x2, y: y2 } = this.proj.project(CONSTELLATION_LINES[i + 2], CONSTELLATION_LINES[i + 3]);
-            if (Math.hypot(x1, y1) < this.proj.screenRadius && Math.hypot(x2, y2) < this.proj.screenRadius) {
+            const { x: x1, y: y1 } = this.#proj.project(CONSTELLATION_LINES[i], CONSTELLATION_LINES[i + 1]);
+            const { x: x2, y: y2 } = this.#proj.project(CONSTELLATION_LINES[i + 2], CONSTELLATION_LINES[i + 3]);
+            if (Math.hypot(x1, y1) < this.#proj.screenRadius && Math.hypot(x2, y2) < this.#proj.screenRadius) {
                 path += `M${cx + x1} ${cy + y1} L${cx + x2} ${cy + y2} `;
             }
         }
-        this.canvas.path(path).fill('none').stroke({
-            color: this.styles.conlineColor,
+        this.#canvas.path(path).fill('none').stroke({
+            color: this.#styles.conlineColor,
             width: 1,
             linecap: 'round',
             linejoin: 'round',
-            opacity: this.styles.conlineOpacity
+            opacity: this.#styles.conlineOpacity
         });
     }
 
@@ -489,13 +489,13 @@ export class SkyPanelRenderer {
             let star = stars[i].split(',');
             let ra = star[2];
             let dec = star[3];
-            const { x, y } = this.proj.project(ra * AstroMath.H2R, dec * AstroMath.D2R);
-            if (Math.hypot(x, y) < this.proj.screenRadius) {
+            const { x, y } = this.#proj.project(ra * AstroMath.H2R, dec * AstroMath.D2R);
+            if (Math.hypot(x, y) < this.#proj.screenRadius) {
                 let mag = star[4];
                 let type = star[5];
                 let radius = 0.5;
                 let alpha = 0.5;
-                let color = this.styles.starColors[type] || this.styles.starColors['default'];
+                let color = this.#styles.starColors[type] || this.#styles.starColors['default'];
                 if (mag < -1) { radius = 7; alpha = 1 }
                 else if (mag < 0) { radius = 6; alpha = 1 }
                 else if (mag < 1) { radius = 5; alpha = 1 }
@@ -503,7 +503,7 @@ export class SkyPanelRenderer {
                 else if (mag < 3) { radius = 3; alpha = 0.8 }
                 else if (mag < 4) { radius = 2; alpha = 0.8 }
                 else if (mag < 5) { radius = 1; alpha = 0.5 }
-                this.canvas.circle(radius * 2).center(cx + x, cy + y).fill({ color, alpha });
+                this.#canvas.circle(radius * 2).center(cx + x, cy + y).fill({ color, alpha });
             }
         }
     }
@@ -511,13 +511,13 @@ export class SkyPanelRenderer {
     #renderConstellationNames(cx, cy) {
         for (let i = 0; i < CONSTELLATION_NAMES.length; i += 3) {
             const name = CONSTELLATION_NAMES[i + 2];
-            const { x, y } = this.proj.project(CONSTELLATION_NAMES[i], CONSTELLATION_NAMES[i + 1]);
-            if (Math.hypot(x, y) < this.proj.screenRadius - 30) {
-                this.canvas.text(name).attr('text-anchor', 'middle').center(cx + x, cy + y)
+            const { x, y } = this.#proj.project(CONSTELLATION_NAMES[i], CONSTELLATION_NAMES[i + 1]);
+            if (Math.hypot(x, y) < this.#proj.screenRadius - 30) {
+                this.#canvas.text(name).attr('text-anchor', 'middle').center(cx + x, cy + y)
                     .transform({ rotate: AstroMath.R2D * (Math.atan2(y, x) - AstroMath.HPI) })
                     .font({
-                        fill: this.styles.conNameTextColor,
-                        size: this.styles.conNameTextSize,
+                        fill: this.#styles.conNameTextColor,
+                        size: this.#styles.conNameTextSize,
                         family: FONT_FAMILY,
                         opacity: 0.8
                     });
@@ -543,6 +543,17 @@ export class SkyPanelRenderer {
  * renderer.render();
  */
 export class TimeRingRenderer {
+    #canvas;
+    #proj;
+    #styles;
+    #astroTime;
+    #radius;
+    #currentDate;
+    #horToEquMatrix;
+    #horVector;
+    #equVector;
+    #deltaCulminationTime;
+
     /**
      * TimeRingRenderer 인스턴스 생성
      * @param {SVG.Container} canvas - SVG.js 캔버스 객체
@@ -557,45 +568,34 @@ export class TimeRingRenderer {
      * @param {number} deltaCulminationTime - 남중시 보정값
      */
     constructor(canvas, proj, styles, astroTime, radius, currentDate, horToEquMatrix, horVector, equVector, deltaCulminationTime) {
-        /** @type {SVG.Container} */
-        this.canvas = canvas;
-        /** @type {EquiDistanceProjection} */
-        this.proj = proj;
-        /** @type {ThemeConfig} */
-        this.styles = styles;
-        /** @type {AstroTime} */
-        this.astroTime = astroTime;
-        /** @type {number} */
-        this.radius = radius;
-        /** @type {Date} */
-        this.currentDate = currentDate;
-        /** @type {AstroMatrix} */
-        this.horToEquMatrix = horToEquMatrix;
-        /** @type {AstroVector} */
-        this.horVector = horVector;
-        /** @type {AstroVector} */
-        this.equVector = equVector;
-        /** @type {number} */
-        this.deltaCulminationTime = deltaCulminationTime;
+        this.#canvas = canvas;
+        this.#proj = proj;
+        this.#styles = styles;
+        this.#astroTime = astroTime;
+        this.#radius = radius;
+        this.#currentDate = currentDate;
+        this.#horToEquMatrix = horToEquMatrix;
+        this.#horVector = horVector;
+        this.#equVector = equVector;
+        this.#deltaCulminationTime = deltaCulminationTime;
     }
 
     render() {
-        const diameter = this.radius * 2;
+        const diameter = this.#radius * 2;
         const cx = 0;
         const cy = 0;
-        let path = '';
 
         // 현재시간 지평좌표계->적도좌표계 행렬
         const lct = AstroTime.jd(
-            this.currentDate.getFullYear(),
-            this.currentDate.getMonth() + 1,
-            this.currentDate.getDate(),
-            this.currentDate.getHours(),
-            this.currentDate.getMinutes(),
-            this.currentDate.getSeconds()
+            this.#currentDate.getFullYear(),
+            this.#currentDate.getMonth() + 1,
+            this.#currentDate.getDate(),
+            this.#currentDate.getHours(),
+            this.#currentDate.getMinutes(),
+            this.#currentDate.getSeconds()
         );
-        const lst = this.astroTime.LCT2LST(lct);
-        this.horToEquMatrix.hor2equ(lst, this.astroTime.glat);
+        const lst = this.#astroTime.LCT2LST(lct);
+        this.#horToEquMatrix.hor2equ(lst, this.#astroTime.glat);
 
         // 커버 (지평선 아래 가리기)
         this.#renderHorizonCover(cx, cy, diameter);
@@ -608,23 +608,23 @@ export class TimeRingRenderer {
     }
 
     #renderHorizonCover(cx, cy, diameter) {
-        let path = `M${cx - this.radius},${cy} `;
-        path += `a ${this.radius},${this.radius} 0 1,1, ${diameter},0 `;
-        path += `a ${this.radius},${this.radius} 0 1,1, -${diameter},0 `;
+        let path = `M${cx - this.#radius},${cy} `;
+        path += `a ${this.#radius},${this.#radius} 0 1,1, ${diameter},0 `;
+        path += `a ${this.#radius},${this.#radius} 0 1,1, -${diameter},0 `;
 
         for (let azimuth = 0; azimuth <= 360 * AstroMath.D2R; azimuth += 0.01) {
-            this.horVector.setSphe(azimuth, 0);
-            this.equVector.multiply(this.horToEquMatrix, this.horVector);
-            const ra = this.equVector.lon();
-            const dec = this.equVector.lat();
-            let { x, y } = this.proj.project(ra, dec);
+            this.#horVector.setSphe(azimuth, 0);
+            this.#equVector.multiply(this.#horToEquMatrix, this.#horVector);
+            const ra = this.#equVector.lon();
+            const dec = this.#equVector.lat();
+            let { x, y } = this.#proj.project(ra, dec);
             if (azimuth == 0) path += 'M';
             else path += 'L';
             path += `${cx + x} ${cy + y} `;
         }
-        this.canvas.path(path).fill(this.styles.topPanelBgColor).stroke({
-            width: this.styles.topPanelStroke.width,
-            color: this.styles.topPanelStroke.color
+        this.#canvas.path(path).fill(this.#styles.topPanelBgColor).stroke({
+            width: this.#styles.topPanelStroke.width,
+            color: this.#styles.topPanelStroke.color
         });
     }
 
@@ -633,22 +633,22 @@ export class TimeRingRenderer {
         let azimuth = 0;
 
         for (let i = 0; i < arrayAzimuthName.length; i++) {
-            this.horVector.setSphe(azimuth * AstroMath.D2R, -4 * AstroMath.D2R);
-            this.equVector.multiply(this.horToEquMatrix, this.horVector);
-            const ra1 = this.equVector.lon();
-            const dec1 = this.equVector.lat();
-            const { x: x1, y: y1 } = this.proj.project(ra1, dec1);
+            this.#horVector.setSphe(azimuth * AstroMath.D2R, -4 * AstroMath.D2R);
+            this.#equVector.multiply(this.#horToEquMatrix, this.#horVector);
+            const ra1 = this.#equVector.lon();
+            const dec1 = this.#equVector.lat();
+            const { x: x1, y: y1 } = this.#proj.project(ra1, dec1);
 
-            this.horVector.setSphe(azimuth * AstroMath.D2R, 90 * AstroMath.D2R);
-            this.equVector.multiply(this.horToEquMatrix, this.horVector);
-            const ra2 = this.equVector.lon();
-            const dec2 = this.equVector.lat();
-            const { x: x2, y: y2 } = this.proj.project(ra2, dec2);
+            this.#horVector.setSphe(azimuth * AstroMath.D2R, 90 * AstroMath.D2R);
+            this.#equVector.multiply(this.#horToEquMatrix, this.#horVector);
+            const ra2 = this.#equVector.lon();
+            const dec2 = this.#equVector.lat();
+            const { x: x2, y: y2 } = this.#proj.project(ra2, dec2);
 
-            this.canvas.text(`${arrayAzimuthName[i]}`).attr('text-anchor', 'middle').center(cx + x1, cy + y1)
+            this.#canvas.text(`${arrayAzimuthName[i]}`).attr('text-anchor', 'middle').center(cx + x1, cy + y1)
                 .font({
-                    fill: this.styles.nwesColor,
-                    size: this.styles.nwesTextSize,
+                    fill: this.#styles.nwesColor,
+                    size: this.#styles.nwesTextSize,
                     family: FONT_FAMILY
                 })
                 .transform({ rotate: AstroMath.R2D * (Math.atan2(y1 - y2, x1 - x2) - AstroMath.HPI) });
@@ -658,52 +658,52 @@ export class TimeRingRenderer {
     }
 
     #renderTimeScale(cx, cy) {
-        this.horVector.setSphe(180 * AstroMath.H2R, 0);
-        this.equVector.multiply(this.horToEquMatrix, this.horVector);
+        this.#horVector.setSphe(180 * AstroMath.H2R, 0);
+        this.#equVector.multiply(this.#horToEquMatrix, this.#horVector);
         let path = '';
 
         for (let hour = 1; hour <= 24; hour++) {
-            const t = -(-this.equVector.lon() - this.deltaCulminationTime + hour * AstroMath.H2R + AstroMath.PI);
+            const t = -(-this.#equVector.lon() - this.#deltaCulminationTime + hour * AstroMath.H2R + AstroMath.PI);
             const cos_lon = Math.cos(t);
             const sin_lon = Math.sin(t);
-            const x1 = this.radius * cos_lon;
-            const y1 = this.radius * sin_lon;
-            const x2 = (this.radius - 9) * cos_lon;
-            const y2 = (this.radius - 9) * sin_lon;
+            const x1 = this.#radius * cos_lon;
+            const y1 = this.#radius * sin_lon;
+            const x2 = (this.#radius - 9) * cos_lon;
+            const y2 = (this.#radius - 9) * sin_lon;
             path += `M${x1 + cx} ${y1 + cy} L${x2 + cx} ${y2 + cy} `;
 
-            const x3 = (this.radius - 18) * cos_lon;
-            const y3 = (this.radius - 18) * sin_lon;
+            const x3 = (this.#radius - 18) * cos_lon;
+            const y3 = (this.#radius - 18) * sin_lon;
 
-            this.canvas.text(`${hour}시`).attr('text-anchor', 'middle').center(cx + x3, cy + y3)
+            this.#canvas.text(`${hour}시`).attr('text-anchor', 'middle').center(cx + x3, cy + y3)
                 .font({
-                    fill: this.styles.timeTextColor,
-                    size: this.styles.timeTextSize,
+                    fill: this.#styles.timeTextColor,
+                    size: this.#styles.timeTextSize,
                     family: FONT_FAMILY
                 })
                 .transform({ rotate: AstroMath.R2D * (Math.atan2(y3, x3) - AstroMath.HPI - AstroMath.PI) });
 
             for (let min = 5; min < 60; min += 5) {
-                const t = -(-this.equVector.lon() - this.deltaCulminationTime + (hour + (min / 60)) * AstroMath.H2R + AstroMath.PI);
+                const t = -(-this.#equVector.lon() - this.#deltaCulminationTime + (hour + (min / 60)) * AstroMath.H2R + AstroMath.PI);
                 const cos_lon = Math.cos(t);
                 const sin_lon = Math.sin(t);
-                const x1 = this.radius * cos_lon;
-                const y1 = this.radius * sin_lon;
+                const x1 = this.#radius * cos_lon;
+                const y1 = this.#radius * sin_lon;
                 let r;
                 if (min % 10 == 0) {
-                    if (min % 30 == 0) r = this.radius - 10;
-                    else r = this.radius - 6;
+                    if (min % 30 == 0) r = this.#radius - 10;
+                    else r = this.#radius - 6;
                 } else {
-                    r = this.radius - 3;
+                    r = this.#radius - 3;
                 }
                 const x2 = r * cos_lon;
                 const y2 = r * sin_lon;
                 path += `M${x1 + cx} ${y1 + cy} L${x2 + cx} ${y2 + cy} `;
             }
         }
-        this.canvas.path(path).fill('none').stroke({
-            width: this.styles.timeLineStroke,
-            color: this.styles.timeLineColor
+        this.#canvas.path(path).fill('none').stroke({
+            width: this.#styles.timeLineStroke,
+            color: this.#styles.timeLineColor
         });
     }
 }
@@ -722,6 +722,10 @@ export class TimeRingRenderer {
  * renderer.render();
  */
 export class InfoPanelRenderer {
+    #canvas;
+    #styles;
+    #version;
+
     /**
      * InfoPanelRenderer 인스턴스 생성
      * @param {SVG.Container} canvas - SVG.js 캔버스 객체
@@ -729,12 +733,9 @@ export class InfoPanelRenderer {
      * @param {string} version - 버전 문자열 (예: 'v1.0.3 (2024-01-15)')
      */
     constructor(canvas, styles, version) {
-        /** @type {SVG.Container} */
-        this.canvas = canvas;
-        /** @type {ThemeConfig} */
-        this.styles = styles;
-        /** @type {string} */
-        this.version = version;
+        this.#canvas = canvas;
+        this.#styles = styles;
+        this.#version = version;
     }
 
     render() {
@@ -743,31 +744,30 @@ export class InfoPanelRenderer {
 
         // 별 등성 범례
         let radius = 0.5;
-        let alpha = 0.5;
         for (let mag = -1; mag < 5; mag++) {
-            if (mag < -1) { radius = 7; alpha = 1 }
-            else if (mag < 0) { radius = 6; alpha = 1 }
-            else if (mag < 1) { radius = 5; alpha = 1 }
-            else if (mag < 2) { radius = 4; alpha = 1 }
-            else if (mag < 3) { radius = 3; alpha = 0.8 }
-            else if (mag < 4) { radius = 2; alpha = 0.8 }
-            else if (mag < 5) { radius = 1; alpha = 0.5 }
-            else { radius = 0.5; alpha = 0.5 }
+            if (mag < -1) { radius = 7; }
+            else if (mag < 0) { radius = 6; }
+            else if (mag < 1) { radius = 5; }
+            else if (mag < 2) { radius = 4; }
+            else if (mag < 3) { radius = 3; }
+            else if (mag < 4) { radius = 2; }
+            else if (mag < 5) { radius = 1; }
+            else { radius = 0.5; }
 
-            this.canvas.circle(radius * 2)
+            this.#canvas.circle(radius * 2)
                 .center(cx - 280 - radius / 2, cy - 170 + mag * 15.2)
-                .fill({ color: this.styles.legendColor, fill: this.styles.legendColor });
+                .fill({ color: this.#styles.legendColor, fill: this.#styles.legendColor });
 
-            this.canvas.text(`${mag + 2} 등성`).move(cx - 270, cy - 187 + mag * 15.5)
-                .font({ fill: this.styles.legendColor, size: this.styles.legendTextSize, family: FONT_FAMILY });
+            this.#canvas.text(`${mag + 2} 등성`).move(cx - 270, cy - 187 + mag * 15.5)
+                .font({ fill: this.#styles.legendColor, size: this.#styles.legendTextSize, family: FONT_FAMILY });
         }
 
         // 타이틀
-        this.canvas.text(`아빠별 별자리판`).move(cx - 160, cy - 290)
-            .font({ fill: this.styles.legendColor, size: 50, family: FONT_FAMILY });
+        this.#canvas.text(`아빠별 별자리판`).move(cx - 160, cy - 290)
+            .font({ fill: this.#styles.legendColor, size: 50, family: FONT_FAMILY });
 
         // 버전 정보
-        this.canvas.text(this.version).center(cx, cy - 200)
-            .font({ fill: this.styles.legendColor, size: 20, family: FONT_FAMILY });
+        this.#canvas.text(this.#version).center(cx, cy - 200)
+            .font({ fill: this.#styles.legendColor, size: 20, family: FONT_FAMILY });
     }
 }

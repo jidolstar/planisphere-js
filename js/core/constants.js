@@ -10,20 +10,16 @@
  */
 
 /**
- * 기본 관측 위치 (서울)
- * @constant {Object}
- * @property {number} lon - 경도 (동경, 도 단위)
- * @property {number} lat - 위도 (북위, 도 단위)
- * @example
- * import { DEFAULT_LOCATION } from './constants.js';
- * console.log(DEFAULT_LOCATION.lon); // 126.98
+ * 기본 경도: 동경 126.98도 (서울 시청 기준)
+ * @constant {number}
  */
-export const DEFAULT_LOCATION = {
-    /** @type {number} 동경 126.98도 (서울 시청 기준) */
-    lon: 126.98,
-    /** @type {number} 북위 37.57도 (서울 시청 기준) */
-    lat: 37.57
-};
+export const DEFAULT_LONGITUDE = 126.98;
+
+/**
+ * 기본 위도: 북위 37.57도 (서울 시청 기준)
+ * @constant {number}
+ */
+export const DEFAULT_LATITUDE = 37.57;
 
 /**
  * 기본 시간대: 한국 표준시 (UTC+9)
@@ -38,6 +34,26 @@ export const DEFAULT_TIMEZONE = 9;
  * @constant {string}
  */
 export const DEFAULT_TIMEZONE_NAME = 'Asia/Seoul';
+
+/**
+ * 기본 관측 위치 (서울)
+ * @constant {Object}
+ * @property {number} lon - 경도 (동경, 도 단위)
+ * @property {number} lat - 위도 (북위, 도 단위)
+ * @example
+ * import { DEFAULT_LOCATION } from './constants.js';
+ * console.log(DEFAULT_LOCATION.lon); // 126.98
+ */
+export const DEFAULT_LOCATION = {
+    /** @type {number} 동경 126.98도 (서울 시청 기준) */
+    lon: DEFAULT_LONGITUDE,
+    /** @type {number} 북위 37.57도 (서울 시청 기준) */
+    lat: DEFAULT_LATITUDE,
+    /** @type {number} 기본 DGMT */
+    dgmt: DEFAULT_TIMEZONE,
+    /** @type {string} 기본 타임존 이름 */
+    tzName: DEFAULT_TIMEZONE_NAME
+};
 
 /**
  * 표시할 별의 등급 제한

@@ -6,23 +6,31 @@
  */
 
 export default class SettingsModal {
+    #planisphere;
+    #savedTheme;
+    #modal;
+    #modalClose;
+    #settingsBtn;
+    #usageDiv;
+    #welcome;
+
     constructor(planisphere, savedTheme) {
-        this.planisphere = planisphere;
-        this.savedTheme = savedTheme;
+        this.#planisphere = planisphere;
+        this.#savedTheme = savedTheme;
 
-        this.$modal = document.getElementById("ps-modal");
-        this.$modalClose = document.getElementById("ps-modal-close");
-        this.$settingsBtn = document.getElementById("ps-settings");
-        this.$usageDiv = document.getElementById("ps-usage");
-        this.$welcome = document.getElementById("ps-welcome-text");
+        this.#modal = document.getElementById("ps-modal");
+        this.#modalClose = document.getElementById("ps-modal-close");
+        this.#settingsBtn = document.getElementById("ps-settings");
+        this.#usageDiv = document.getElementById("ps-usage");
+        this.#welcome = document.getElementById("ps-welcome-text");
 
-        this._initUsage();
-        this._initEvents();
-        this._initThemeSelection();
+        this.#initUsage();
+        this.#initEvents();
+        this.#initThemeSelection();
     }
 
-    _initUsage() {
-        this.$usageDiv.innerHTML = `
+    #initUsage() {
+        this.#usageDiv.innerHTML = `
             <p>📱 스마트폰</p>
             <ul>
                 <li>회전: 한 손가락 드래그</li>
@@ -39,28 +47,28 @@ export default class SettingsModal {
     }
 
     open(showWelcome = false) {
-        this.$modal.style.display = "flex";
-        this.$modal.classList.add("open");
+        this.#modal.style.display = "flex";
+        this.#modal.classList.add("open");
         if (showWelcome) {
-            this.$welcome.style.display = "block";
+            this.#welcome.style.display = "block";
         } else {
-            this.$welcome.style.display = "none";
+            this.#welcome.style.display = "none";
         }
     }
 
     close() {
-        this.$modal.style.display = "none";
-        this.$modal.classList.remove("open");
+        this.#modal.style.display = "none";
+        this.#modal.classList.remove("open");
     }
 
-    _initEvents() {
+    #initEvents() {
         // 열기
-        this.$settingsBtn.addEventListener("click", () => {
+        this.#settingsBtn.addEventListener("click", () => {
             this.open(false);
         });
 
         // 닫기
-        this.$modalClose.addEventListener("click", () => {
+        this.#modalClose.addEventListener("click", () => {
             this.close();
         });
 
@@ -79,10 +87,10 @@ export default class SettingsModal {
         }
     }
 
-    _initThemeSelection() {
-        const Planisphere = this.planisphere.constructor; // Static access
+    #initThemeSelection() {
+        const Planisphere = this.#planisphere.constructor; // Static access
         document.querySelectorAll('.ps-theme-select img').forEach(img => {
-            if (img.dataset.theme === this.savedTheme) img.classList.add("active");
+            if (img.dataset.theme === this.#savedTheme) img.classList.add("active");
 
             img.addEventListener("click", () => {
                 document.querySelectorAll('.ps-theme-select img').forEach(i => i.classList.remove('active'));
@@ -93,13 +101,13 @@ export default class SettingsModal {
 
                 if (theme === "dark") {
                     document.body.style.background = "#000";
-                    this.planisphere.setStyles(Planisphere.darkStyles);
+                    this.#planisphere.setStyles(Planisphere.darkStyles);
                 } else if (theme === "light") {
                     document.body.style.background = "#fff";
-                    this.planisphere.setStyles(Planisphere.lightStyles);
+                    this.#planisphere.setStyles(Planisphere.lightStyles);
                 } else {
                     document.body.style.background = "#777";
-                    this.planisphere.setStyles(Planisphere.defaultStyles);
+                    this.#planisphere.setStyles(Planisphere.defaultStyles);
                 }
             });
         });

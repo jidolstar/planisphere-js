@@ -117,14 +117,20 @@ class InputHandler {
     /** @type {number} 최대 줌 배율 */
     #maxScale = 3.0;
 
-    // 임시 변수들 (pinch, gesture 등)
-    _panPrevX = 0;
-    _panPrevY = 0;
-    _pinchPrevCenterX = 0;
-    _pinchPrevCenterY = 0;
-    _pinchStartDist = 0;
-    _pinchStartScale = 1;
-    _gestureStartScale = 1;
+    /** @type {number} 이전 터치/마우스 X */
+    #panPrevX = 0;
+    /** @type {number} 이전 터치/마우스 Y */
+    #panPrevY = 0;
+    /** @type {number} 핀치 이전 중심 X */
+    #pinchPrevCenterX = 0;
+    /** @type {number} 핀치 이전 중심 Y */
+    #pinchPrevCenterY = 0;
+    /** @type {number} 핀치 시작 거리 */
+    #pinchStartDist = 0;
+    /** @type {number} 핀치 시작 배율 */
+    #pinchStartScale = 1;
+    /** @type {number} 제스처 시작 배율 */
+    #gestureStartScale = 1;
 
     /**
      * InputHandler 인스턴스 생성
@@ -339,8 +345,8 @@ class InputHandler {
             if (wantPan) {
                 this.#dragging = false;
                 this.#panning = true;
-                this._panPrevX = e.pageX;
-                this._panPrevY = e.pageY;
+                this.#panPrevX = e.pageX;
+                this.#panPrevY = e.pageY;
             } else {
                 this.#dragging = true;
                 this.#panning = false;
@@ -349,10 +355,10 @@ class InputHandler {
             }
         } else if (this.#pointers.size === 2) {
             const pts = Array.from(this.#pointers.values());
-            this._pinchPrevCenterX = (pts[0].x + pts[1].x) / 2;
-            this._pinchPrevCenterY = (pts[0].y + pts[1].y) / 2;
-            this._pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-            this._pinchStartScale = this.#scale;
+            this.#pinchPrevCenterX = (pts[0].x + pts[1].x) / 2;
+            this.#pinchPrevCenterY = (pts[0].y + pts[1].y) / 2;
+            this.#pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            this.#pinchStartScale = this.#scale;
             this.#currentRotation = this.#lastRotation;
             this.#panning = true;
         }
@@ -367,19 +373,19 @@ class InputHandler {
             const pts = Array.from(this.#pointers.values());
             const cx = (pts[0].x + pts[1].x) / 2;
             const cy = (pts[0].y + pts[1].y) / 2;
-            this.#panX += cx - this._pinchPrevCenterX;
-            this.#panY += cy - this._pinchPrevCenterY;
-            this._pinchPrevCenterX = cx;
-            this._pinchPrevCenterY = cy;
+            this.#panX += cx - this.#pinchPrevCenterX;
+            this.#panY += cy - this.#pinchPrevCenterY;
+            this.#pinchPrevCenterX = cx;
+            this.#pinchPrevCenterY = cy;
 
             const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-            let next = this._pinchStartScale * (dist / this._pinchStartDist);
+            let next = this.#pinchStartScale * (dist / this.#pinchStartDist);
             this.#scale = Math.max(this.#minScale, Math.min(this.#maxScale, next));
         } else if (this.#pointers.size === 1 && this.#panning) {
-            this.#panX += e.pageX - this._panPrevX;
-            this.#panY += e.pageY - this._panPrevY;
-            this._panPrevX = e.pageX;
-            this._panPrevY = e.pageY;
+            this.#panX += e.pageX - this.#panPrevX;
+            this.#panY += e.pageY - this.#panPrevY;
+            this.#panPrevX = e.pageX;
+            this.#panPrevY = e.pageY;
         } else if (this.#pointers.size === 1 && this.#dragging && !this.#panning) {
             const r1 = Math.atan2(this.#dragDownY, this.#dragDownX);
             const r2 = Math.atan2(e.pageY - this.#screenCenterY, e.pageX - this.#screenCenterX);
@@ -414,12 +420,12 @@ class InputHandler {
     // Safari Gesture Events
     #onGestureStart(e) {
         e.preventDefault();
-        this._gestureStartScale = this.#scale;
+        this.#gestureStartScale = this.#scale;
     }
 
     #onGestureChange(e) {
         e.preventDefault();
-        let next = this._gestureStartScale * e.scale;
+        let next = this.#gestureStartScale * e.scale;
         this.#scale = Math.max(this.#minScale, Math.min(this.#maxScale, next));
         this.#applyTransform();
     }
@@ -491,6 +497,64 @@ class Planisphere {
     /** @type {number} */
     #skyRotation = 0;
 
+    /** @type {string} */
+    #version;
+    /** @type {number} */
+    #width = 1000;
+    /** @type {number} */
+    #height = 1000;
+    /** @type {number} */
+    #centerX = 500;
+    /** @type {number} */
+    #centerY = 500;
+    /** @type {number} */
+    #deltaX = 30;
+    /** @type {number} */
+    #deltaY = 30;
+    /** @type {number} */
+    #radius;
+    /** @type {number} */
+    #intervalRA = 2;
+    /** @type {number} */
+    #intervalDE = 30;
+    /** @type {AstroVector} */
+    #horVector = new AstroVector();
+    /** @type {AstroVector} */
+    #equVector = new AstroVector();
+    /** @type {AstroMatrix} */
+    #horToEquMatrix = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    /** @type {Date} */
+    #currentDate;
+    /** @type {AstroTime} */
+    #astroTime;
+    /** @type {number} */
+    #deltaCulminationTime;
+    /** @type {number} */
+    #lct;
+    /** @type {number} */
+    #ut;
+    /** @type {number} */
+    #gst;
+    /** @type {number} */
+    #lst;
+    /** @type {EquiDistanceProjection} */
+    #proj;
+    /** @type {number} */
+    #limitDE;
+
+    /** @type {SVG.Doc} */
+    #skyPanel;
+    /** @type {SVG.Doc} */
+    #topPanel;
+    /** @type {SVG.Doc} */
+    #infoPanel;
+
+    /** @type {ThemeConfig} */
+    #styles;
+    /** @type {string} */
+    #tzName;
+
     /**
      * Planisphere 인스턴스 생성
      * @param {Object} options - 생성 옵션
@@ -506,49 +570,37 @@ class Planisphere {
     constructor({
         wrapperDomId,
         currentDate = new Date(),
-        lon = 126.98,
-        lat = 37.57,
-        dgmt = 9,
+        lon = DEFAULT_LONGITUDE,
+        lat = DEFAULT_LATITUDE,
+        dgmt = DEFAULT_TIMEZONE,
         tzName = DEFAULT_TIMEZONE_NAME,
         styles = {},
         version = '1.0.0'
     }) {
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
-        this.tzName = tzName;
-        this.limitDE = -70 * AstroMath.D2R
-        //this.limitDE = -(90 - Math.abs(lat) + 5) * AstroMath.D2R;
+        this.#tzName = tzName;
+        this.#limitDE = -70 * AstroMath.D2R
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
         if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
         if (Math.abs(lat) < 10) throw new Error("적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.");
 
         //스타일 관련 
-        this.styles = Object.assign({}, Planisphere.defaultStyles, styles);
+        this.#styles = Object.assign({}, Planisphere.defaultStyles, styles);
 
         //좌표 관련 
-        this.version = version;
-        this.width = 1000;
-        this.height = 1000;
-        this.centerX = this.width * 0.5;
-        this.centerY = this.height * 0.5;
-        this.deltaX = 30;
-        this.deltaY = 30;
-        this.radius = this.width * 0.5 - this.deltaX * 2;
-        this.intervalRA = 2;	//적경 라인 간격(단위 h)
-        this.intervalDE = 30;	//적위 라인 간격(단위 도)
-        this.horVector = new AstroVector();	//지평좌표값
-        this.equVector = new AstroVector();	//적도좌표값
-        this.horToEquMatrix = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0); //지평좌표->적도좌표 로 바꿔주는 행렬
+        this.#version = version;
+        this.#radius = this.#width * 0.5 - this.#deltaX * 2;
 
-        this.currentDate = currentDate;
-        this.astroTime = new AstroTime(dgmt, lon, lat);
-        this.deltaCulminationTime = this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon; //경도차에 따라 남중시간이 다르므로 사용
-        this.lct = AstroTime.jd(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, this.currentDate.getDate(), this.currentDate.getHours(), this.currentDate.getMinutes(), this.currentDate.getSeconds());
-        this.ut = this.astroTime.LCT2UT(this.lct);
-        this.gst = AstroTime.UT2GST(this.ut);
-        this.lst = this.astroTime.LCT2LST(this.lct);
+        this.#currentDate = currentDate;
+        this.#astroTime = new AstroTime(dgmt, lon, lat);
+        this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
+        this.#lct = AstroTime.jd(this.#currentDate.getFullYear(), this.#currentDate.getMonth() + 1, this.#currentDate.getDate(), this.#currentDate.getHours(), this.#currentDate.getMinutes(), this.#currentDate.getSeconds());
+        this.#ut = this.#astroTime.LCT2UT(this.#lct);
+        this.#gst = AstroTime.UT2GST(this.#ut);
+        this.#lst = this.#astroTime.LCT2LST(this.#lct);
 
-        this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
+        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE);
 
         // wrapper 
         const wrapper = document.querySelector(wrapperDomId);
@@ -556,7 +608,6 @@ class Planisphere {
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
         wrapper.style.height = '100vh';
-        //wrapper.style.background = 'linear-gradient(to bottom, '+ this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')'; 
 
         // planisphere 영역 생성
         const planisphereDiv = document.createElement('div');
@@ -571,38 +622,30 @@ class Planisphere {
         this.#parentDom = planisphereDiv;
 
         //Sky
-        this.skyPanel = SVG().addTo(this.#parentDom)
+        this.#skyPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
-            .viewbox(-this.centerX, -this.centerY, this.width, this.height);
-        this.skyPanel.node.style.touchAction = 'none';
-        this.#skyGroup = this.skyPanel.group();
+            .viewbox(-this.#centerX, -this.#centerY, this.#width, this.#height);
+        this.#skyPanel.node.style.touchAction = 'none';
+        this.#skyGroup = this.#skyPanel.group();
 
         //Top
-        this.topPanel = SVG().addTo(this.#parentDom)
+        this.#topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
-            .viewbox(-this.centerX, -this.centerY, this.width, this.height);
-        this.topPanel.node.style.touchAction = 'none';
-        this.#topGroup = this.topPanel.group();
+            .viewbox(-this.#centerX, -this.#centerY, this.#width, this.#height);
+        this.#topPanel.node.style.touchAction = 'none';
+        this.#topGroup = this.#topPanel.group();
 
         //Info
-        this.infoPanel = SVG().addTo(this.#parentDom)
+        this.#infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
-            .viewbox(-this.centerX, -this.centerY, this.width, this.height);
-        this.infoPanel.node.style.touchAction = 'none';
-        this.#infoGroup = this.infoPanel.group();
+            .viewbox(-this.#centerX, -this.#centerY, this.#width, this.#height);
+        this.#infoPanel.node.style.touchAction = 'none';
+        this.#infoGroup = this.#infoPanel.group();
 
-        // Safari SVG transform alignment fix - NO LONGER NEEDED with group transform
-        // [this.skyPanel, this.topPanel, this.infoPanel].forEach(panel => {
-        //     panel.node.style.transformOrigin = 'center center';
-        //     panel.node.style.webkitTransformOrigin = 'center center';
-        //     // 모바일에서 탭 하이라이트 제거
-        //     panel.node.style.webkitTapHighlightColor = 'transparent';
-        // });
-
-        // Phase 4: InputHandler로 입력 처리 통합
+        // InputHandler로 입력 처리 통합
         this.#inputHandler = new InputHandler(this.#parentDom, {
             onTransform: (rotation, scale, panX, panY) => {
                 this.#applyTransform(rotation, scale, panX, panY);
@@ -622,11 +665,11 @@ class Planisphere {
      */
     setStyles(newStyles, isInit = false) {
         // 현재 스타일을 교체
-        this.styles = Object.assign({}, this.styles, newStyles);
+        this.#styles = Object.assign({}, this.#styles, newStyles);
 
         // 배경색 등 wrapper 스타일 업데이트
         this.#parentDom.parentElement.style.background =
-            'linear-gradient(to bottom, ' + this.styles.gradientBackgroundColor[0] + ', ' + this.styles.gradientBackgroundColor[1] + ')';
+            'linear-gradient(to bottom, ' + this.#styles.gradientBackgroundColor[0] + ', ' + this.#styles.gradientBackgroundColor[1] + ')';
 
         // 패널 다시 그리기
         this.#skyGroup.clear();
@@ -649,7 +692,7 @@ class Planisphere {
             throw new TypeError('dateObj must be a Date object');
         }
 
-        this.currentDate = dateObj;
+        this.#currentDate = dateObj;
         const Y = dateObj.getFullYear();
         const M = dateObj.getMonth() + 1;
         const D = dateObj.getDate();
@@ -657,8 +700,8 @@ class Planisphere {
         const m = dateObj.getMinutes();
         const s = dateObj.getSeconds();
 
-        this.lct = AstroTime.jd(Y, M, D, h, m, s);
-        this.lst = this.astroTime.LCT2LST(this.lct);
+        this.#lct = AstroTime.jd(Y, M, D, h, m, s);
+        this.#lst = this.#astroTime.LCT2LST(this.#lct);
 
         // 회전값 갱신 및 InputHandler 동기화 (false: 수동 변경 시 jump 방지)
         this.#rotateCurrentDate(false);
@@ -683,17 +726,17 @@ class Planisphere {
         }
 
         // AstroTime 재생성
-        const newDgmt = (dgmt !== undefined) ? dgmt : this.astroTime.dgmt;
-        if (tzName !== undefined) this.tzName = tzName;
+        const newDgmt = (dgmt !== undefined) ? dgmt : this.#astroTime.dgmt;
+        if (tzName !== undefined) this.#tzName = tzName;
 
-        this.astroTime = new AstroTime(newDgmt, lon, lat);
-        this.deltaCulminationTime = this.astroTime.dgmt * AstroMath.H2R - this.astroTime.glon;
+        this.#astroTime = new AstroTime(newDgmt, lon, lat);
+        this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
 
         // 투영 재생성 및 갱신
-        this.proj = new EquiDistanceProjection(this.radius, this.limitDE);
+        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE);
 
         // LST 갱신 (위치 필수 업데이트 항목)
-        this.lst = this.astroTime.LCT2LST(this.lct);
+        this.#lst = this.#astroTime.LCT2LST(this.#lct);
 
         // 전체 다시 그리기
         this.#skyGroup.clear();
@@ -736,10 +779,11 @@ class Planisphere {
         this.#render();
         this.#rotateCurrentDate(false);
     }
+
     #rotateCurrentDate(isResetInput = true) {
         // Local Sidereal Time 만큼 회전시켜준다.
         // 즉, 남중해야할 별이 화면 아래로 향하게 한다.
-        let rotation = -(AstroTime.jd2Time(this.lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
+        let rotation = -(AstroTime.jd2Time(this.#lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
         this.#skyRotation = rotation;
         if (isResetInput) this.#topPanelRotation = rotation;
 
@@ -795,37 +839,37 @@ class Planisphere {
     #renderSkyPanel() {
         const renderer = new SkyPanelRenderer(
             this.#skyGroup,
-            this.proj,
-            this.styles,
-            this.astroTime,
-            this.radius,
-            this.limitDE,
-            this.intervalRA,
-            this.intervalDE,
-            this.currentDate
+            this.#proj,
+            this.#styles,
+            this.#astroTime,
+            this.#radius,
+            this.#limitDE,
+            this.#intervalRA,
+            this.#intervalDE,
+            this.#currentDate
         );
         renderer.render();
     }
     #renderTopPanel() {
         const renderer = new TimeRingRenderer(
             this.#topGroup,
-            this.proj,
-            this.styles,
-            this.astroTime,
-            this.radius,
-            this.currentDate,
-            this.horToEquMatrix,
-            this.horVector,
-            this.equVector,
-            this.deltaCulminationTime
+            this.#proj,
+            this.#styles,
+            this.#astroTime,
+            this.#radius,
+            this.#currentDate,
+            this.#horToEquMatrix,
+            this.#horVector,
+            this.#equVector,
+            this.#deltaCulminationTime
         );
         renderer.render();
     }
     #renderInfoPanel() {
         const renderer = new InfoPanelRenderer(
             this.#infoGroup,
-            this.styles,
-            this.version
+            this.#styles,
+            this.#version
         );
         renderer.render();
     }

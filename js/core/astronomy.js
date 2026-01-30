@@ -40,7 +40,7 @@
  */
 export const AstroMath = Object.freeze({
     /** @type {number} 라디안 → 도 변환 계수 */
-    R2D: 180.0/Math.PI,
+    R2D: 180.0 / Math.PI,
     /** @type {number} 도 → 라디안 변환 계수 */
     D2R: Math.PI / 180.0,
     /** @type {number} 초(arcsecond) → 라디안 변환 계수 */
@@ -69,7 +69,7 @@ export const AstroMath = Object.freeze({
      * AstroMath.mod(-10, 360);   // 350
      */
     mod: (dividend, divisor) => {
-        return dividend - (Math.floor(dividend/divisor)*divisor);
+        return dividend - (Math.floor(dividend / divisor) * divisor);
     },
 
     /**
@@ -118,21 +118,26 @@ export const AstroMath = Object.freeze({
  * // 지방 표준시를 지방 항성시로 변환
  * const lst = astroTime.LCT2LST(jd);
  */
-export class AstroTime{
+export class AstroTime {
+    #dgmt;
+    #glon;
+    #glat;
+
     /**
      * AstroTime 인스턴스 생성
      * @param {number} dgmt - UTC 기준 시간대 오프셋 (예: 한국 표준시는 9)
      * @param {number} lon - 관측 지점의 경도 (도 단위, 동경 양수)
      * @param {number} lat - 관측 지점의 위도 (도 단위, 북위 양수)
      */
-    constructor(dgmt, lon, lat){
-        /** @type {number} UTC 오프셋 (시간) */
-        this.dgmt = dgmt;
-        /** @type {number} 경도 (라디안) */
-        this.glon = lon * AstroMath.D2R;
-        /** @type {number} 위도 (라디안) */
-        this.glat = lat * AstroMath.D2R;
+    constructor(dgmt, lon, lat) {
+        this.#dgmt = dgmt;
+        this.#glon = lon * AstroMath.D2R;
+        this.#glat = lat * AstroMath.D2R;
     }
+
+    get dgmt() { return this.#dgmt; }
+    get glon() { return this.#glon; }
+    get glat() { return this.#glat; }
 
     /**
      * 그레고리력 윤년 판단
@@ -190,8 +195,8 @@ export class AstroTime{
      * // 2024년 1월 1일 정오의 율리우스일
      * AstroTime.jd(2024, 1, 1, 12, 0, 0); // 2460310.5
      */
-    static jd(year, month, day, hour, minute, second){
-        if(month < 3){
+    static jd(year, month, day, hour, minute, second) {
+        if (month < 3) {
             year--;
             month += 12;
         }
@@ -210,7 +215,7 @@ export class AstroTime{
      * @param {number} jd - 율리우스일
      * @returns {number} 날짜 부분 (0시 기준)
      */
-    static jd2Date(jd){
+    static jd2Date(jd) {
         return Math.floor(jd - 0.5) + 0.5;
     }
 
@@ -220,7 +225,7 @@ export class AstroTime{
      * @param {number} jd - 율리우스일
      * @returns {number} 시간 (0-24 시간 단위)
      */
-    static jd2Time(jd){
+    static jd2Time(jd) {
         return (jd - this.jd2Date(jd)) * 24.0;
     }
 
@@ -267,7 +272,7 @@ export class AstroTime{
      * @param {number} ut - 세계시 (율리우스일 형식)
      * @returns {number} 그리니치 항성시 (율리우스일 형식)
      */
-    static UT2GST(ut){
+    static UT2GST(ut) {
         let ut_date = this.jd2Date(ut);
         let ut_time = (ut - ut_date) * 24.0;
         let t = (ut_date - 2451545.0) / 36525.0;
@@ -283,7 +288,7 @@ export class AstroTime{
      * @returns {number} 세계시 (율리우스일 형식)
      * @note 이 변환으로 인해 날짜가 변경될 수 있으며, 하루에 두 값이 존재할 수 있음
      */
-    static GST2UT(gst){
+    static GST2UT(gst) {
         var gst_date = this.jd2Date(gst);
         let gst_time = (gst - gst_date) * 24.0;
         var t = (gst_date - 2451545.0) / 36525.0;
@@ -300,7 +305,7 @@ export class AstroTime{
      * @param {number} dec - 적위 (라디안)
      * @returns {number} 지방시각 (라디안)
      */
-    HAFromDec(alt, dec){
+    HAFromDec(alt, dec) {
         return Math.acos(
             (Math.sin(alt) - Math.sin(glat) * Math.sin(dec)) /
             (Math.cos(glat) * Math.cos(dec))
@@ -312,8 +317,8 @@ export class AstroTime{
      * @param {number} ut - 세계시 (율리우스일 형식)
      * @returns {number} 지방 표준시 (율리우스일 형식)
      */
-    UT2LCT(ut){
-        return ut + this.dgmt / 24.0;
+    UT2LCT(ut) {
+        return ut + this.#dgmt / 24.0;
     }
 
     /**
@@ -321,7 +326,7 @@ export class AstroTime{
      * @param {number} gst - 그리니치 항성시 (율리우스일 형식)
      * @returns {number} 지방 표준시 (율리우스일 형식)
      */
-    GST2LCT(gst){
+    GST2LCT(gst) {
         let ut = AstroTime.GST2UT(gst);
         return this.UT2LCT(ut);
     }
@@ -331,8 +336,8 @@ export class AstroTime{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @returns {number} 그리니치 항성시 (율리우스일 형식)
      */
-    LST2GST(lst){
-        return lst - this.glon / AstroMath.TPI;
+    LST2GST(lst) {
+        return lst - this.#glon / AstroMath.TPI;
     }
 
     /**
@@ -340,7 +345,7 @@ export class AstroTime{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @returns {number} 세계시 (율리우스일 형식)
      */
-    LST2UT(lst){
+    LST2UT(lst) {
         let gst = this.LST2GST(lst);
         return AstroTime.GST2UT(gst);
     }
@@ -350,7 +355,7 @@ export class AstroTime{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @returns {number} 지방 표준시 (율리우스일 형식)
      */
-    LST2LCT(lst){
+    LST2LCT(lst) {
         let gst = this.LST2GST(lst);
         return this.GST2LCT(gst);
     }
@@ -360,8 +365,8 @@ export class AstroTime{
      * @param {number} lct - 지방 표준시 (율리우스일 형식)
      * @returns {number} 세계시 (율리우스일 형식)
      */
-    LCT2UT(lct){
-        return lct - this.dgmt / 24.0;
+    LCT2UT(lct) {
+        return lct - this.#dgmt / 24.0;
     }
 
     /**
@@ -369,7 +374,7 @@ export class AstroTime{
      * @param {number} lct - 지방 표준시 (율리우스일 형식)
      * @returns {number} 그리니치 항성시 (율리우스일 형식)
      */
-    LCT2GST(lct){
+    LCT2GST(lct) {
         let ut = this.LCT2UT(lct);
         return AstroTime.UT2GST(ut);
     }
@@ -379,8 +384,8 @@ export class AstroTime{
      * @param {number} gst - 그리니치 항성시 (율리우스일 형식)
      * @returns {number} 지방 항성시 (율리우스일 형식)
      */
-    GST2LST(gst){
-        return gst + this.glon * AstroMath.R2H / 24.0;
+    GST2LST(gst) {
+        return gst + this.#glon * AstroMath.R2H / 24.0;
     }
 
     /**
@@ -388,7 +393,7 @@ export class AstroTime{
      * @param {number} ut - 세계시 (율리우스일 형식)
      * @returns {number} 지방 항성시 (율리우스일 형식)
      */
-    UT2LST(ut){
+    UT2LST(ut) {
         let gst = AstroTime.UT2GST(ut);
         return this.GST2LST(gst);
     }
@@ -398,7 +403,7 @@ export class AstroTime{
      * @param {number} lct - 지방 표준시 (율리우스일 형식)
      * @returns {number} 지방 항성시 (율리우스일 형식)
      */
-    LCT2LST(lct){
+    LCT2LST(lct) {
         let ut = this.LCT2UT(lct);
         return this.UT2LST(ut);
     }
@@ -428,8 +433,8 @@ export class AstroTime{
      * astroTime.lasn(2024, 6, 21); // 약 12.2 (서울의 하지 진정오)
      */
     lasn(year, month, day, dstHours = 0) {
-        const lonHours = this.glon * AstroMath.R2H;
-        const zoneHours = this.dgmt;
+        const lonHours = this.#glon * AstroMath.R2H;
+        const zoneHours = this.#dgmt;
         const eotHours = AstroTime.equationOfTimeMinutes(year, month, day) / 60.0;
         const meanNoonOffset = zoneHours - lonHours;
         let hour = 12 + meanNoonOffset - eotHours + dstHours;
@@ -445,7 +450,7 @@ export class AstroTime{
      * @param {number} [dstHours=0] - 일광절약시간 오프셋 (시간)
      * @returns {number} 진정자정 시각 (0-24 시간 단위)
      */
-    lamn(year, month, day, dstHours=0) {
+    lamn(year, month, day, dstHours = 0) {
         return AstroMath.normalize(
             this.lasn(year, month, day, dstHours) - 12,
             0, 24
@@ -504,41 +509,46 @@ export class AstroTime{
  * const hor = new AstroVector(0, 0, 0);
  * hor.equ2hor(equ, lst, lat);
  */
-export class AstroVector{
+export class AstroVector {
+    #x;
+    #y;
+    #z;
+
     /**
      * AstroVector 인스턴스 생성
      * @param {number} x - X 좌표
      * @param {number} y - Y 좌표
      * @param {number} z - Z 좌표
      */
-    constructor(x, y, z){
-        /** @type {number} X 좌표 */
-        this.x = x;
-        /** @type {number} Y 좌표 */
-        this.y = y;
-        /** @type {number} Z 좌표 */
-        this.z = z;
+    constructor(x, y, z) {
+        this.#x = x;
+        this.#y = y;
+        this.#z = z;
     }
+
+    get x() { return this.#x; }
+    get y() { return this.#y; }
+    get z() { return this.#z; }
 
     /**
      * 구면 좌표로부터 직교 좌표 설정 (반경 r=1 가정)
      * @param {number} lon - 경도 (라디안)
      * @param {number} lat - 위도 (라디안)
      */
-    setSphe(lon, lat){
+    setSphe(lon, lat) {
         const cos_lat = Math.cos(lat)
-        this.x = cos_lat * Math.cos(lon);
-        this.y = cos_lat * Math.sin(lon);
-        this.z = Math.sin(lat);
+        this.#x = cos_lat * Math.cos(lon);
+        this.#y = cos_lat * Math.sin(lon);
+        this.#z = Math.sin(lat);
     }
 
     /**
      * 경도(Longitude) 반환
      * @returns {number} 경도 (0 ~ 2π 라디안)
      */
-    lon(){
-        let r = Math.atan2(this.y, this.x);
-        if(r < 0) r += AstroMath.TPI;
+    lon() {
+        let r = Math.atan2(this.#y, this.#x);
+        if (r < 0) r += AstroMath.TPI;
         return r;
     }
 
@@ -546,27 +556,27 @@ export class AstroVector{
      * 위도(Latitude) 반환
      * @returns {number} 위도 (-π/2 ~ π/2 라디안)
      */
-    lat(){
-        const r = Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
-        return Math.asin(this.z / r);
+    lat() {
+        const r = Math.sqrt(this.#x * this.#x + this.#y * this.#y + this.#z * this.#z);
+        return Math.asin(this.#z / r);
     }
 
     /**
      * 벡터의 크기(길이) 반환
      * @returns {number} 벡터 크기 (√(x²+y²+z²))
      */
-    length(){
-        return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z)
+    length() {
+        return Math.sqrt(this.#x * this.#x + this.#y * this.#y + this.#z * this.#z)
     }
 
     /**
      * 벡터를 단위 벡터로 정규화 (크기를 1로 만듦)
      */
-    normalize(){
+    normalize() {
         const r = this.length();
-        this.x /= r;
-        this.y /= r;
-        this.z /= r;
+        this.#x /= r;
+        this.#y /= r;
+        this.#z /= r;
     }
 
     /**
@@ -574,10 +584,12 @@ export class AstroVector{
      * @param {AstroMatrix} m - 3×3 변환 행렬
      * @param {AstroVector} v - 입력 벡터
      */
-    multiply(m, v){
-        this.x = v.x * m.v[0][0] + v.y * m.v[0][1] + v.z * m.v[0][2];
-        this.y = v.x * m.v[1][0] + v.y * m.v[1][1] + v.z * m.v[1][2];
-        this.z = v.x * m.v[2][0] + v.y * m.v[2][1] + v.z * m.v[2][2];
+    multiply(m, v) {
+        // m.#v is accessible because it's the same class type for private fields (wait, m is AstroMatrix)
+        // m.get(r, c) should be used instead of accessing private #v of another class.
+        this.#x = v.#x * m.get(0, 0) + v.#y * m.get(0, 1) + v.#z * m.get(0, 2);
+        this.#y = v.#x * m.get(1, 0) + v.#y * m.get(1, 1) + v.#z * m.get(1, 2);
+        this.#z = v.#x * m.get(2, 0) + v.#y * m.get(2, 1) + v.#z * m.get(2, 2);
     }
 
     /**
@@ -586,17 +598,17 @@ export class AstroVector{
      * @param {number} dt - 율리우스일 (황도 경사각 계산용)
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    equ2ecl(equ, dt){
+    equ2ecl(equ, dt) {
         const d = dt - 2451543.5;
         const e = (23.4393 - 3.563e-7 * d) * AstroMath.D2R;
         const cos_e = Math.cos(e);
         const sin_e = Math.sin(e);
-        const x1 = equ.x;
-        const y1 = equ.y;
-        const z1 = equ.z;
-        this.x = x1;
-        this.y = y1 * cos_e + z1 * sin_e;
-        this.z = y1 * -sin_e + z1 * cos_e;
+        const x1 = equ.#x;
+        const y1 = equ.#y;
+        const z1 = equ.#z;
+        this.#x = x1;
+        this.#y = y1 * cos_e + z1 * sin_e;
+        this.#z = y1 * -sin_e + z1 * cos_e;
     }
 
     /**
@@ -606,8 +618,8 @@ export class AstroVector{
      * @param {number} lat - 관측 위도 (라디안)
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    hor2equ(hor, lst, lat){
-        var mat = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+    hor2equ(hor, lst, lat) {
+        var mat = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         mat.hor2equ(lst, lat);
         this.multiply(mat, hor);
     }
@@ -617,13 +629,13 @@ export class AstroVector{
      * @param {AstroVector} equ - 적도 좌표 벡터
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    equ2gal(equ){
-        const x1 = equ.x;
-        const y1 = equ.y;
-        const z1 = equ.z;
-        this.x = x1 * -0.0669887 + y1 * -0.8727558 + z1 * -0.4835389;
-        this.y = x1 * 0.4927285 + y1 * -0.4503470 + z1 * 0.7445846;
-        this.z = x1 * -0.8676008 + y1 * -0.1883746 + z1 * 0.4601998;
+    equ2gal(equ) {
+        const x1 = equ.#x;
+        const y1 = equ.#y;
+        const z1 = equ.#z;
+        this.#x = x1 * -0.0669887 + y1 * -0.8727558 + z1 * -0.4835389;
+        this.#y = x1 * 0.4927285 + y1 * -0.4503470 + z1 * 0.7445846;
+        this.#z = x1 * -0.8676008 + y1 * -0.1883746 + z1 * 0.4601998;
     }
 
     /**
@@ -632,18 +644,18 @@ export class AstroVector{
      * @param {number} dt - 율리우스일 (황도 경사각 계산용)
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    ecl2equ(ecl, dt){
-        const x1 = ecl.x;
-        const y1 = ecl.y;
-        const z1 = ecl.z;
+    ecl2equ(ecl, dt) {
+        const x1 = ecl.#x;
+        const y1 = ecl.#y;
+        const z1 = ecl.#z;
 
         const d = dt - 2451543.5;
         const e = (23.4393 - 3.563e-7 * d) * AstroMath.D2R;
         const cos_e = Math.cos(e);
         const sin_e = Math.sin(e);
-        this.x = x1;
-        this.y = y1 * cos_e + z1 * -sin_e;
-        this.z = y1 * sin_e + z1 * cos_e;
+        this.#x = x1;
+        this.#y = y1 * cos_e + z1 * -sin_e;
+        this.#z = y1 * sin_e + z1 * cos_e;
     }
 
     /**
@@ -653,8 +665,8 @@ export class AstroVector{
      * @param {number} lat - 관측 위도 (라디안)
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    ecl2hor(ecl, lst, lat){
-        const equ = new AstroVector(0,0,0);
+    ecl2hor(ecl, lst, lat) {
+        const equ = new AstroVector(0, 0, 0);
         equ.ecl2equ(ecl, lst);
         this.equ2hor(equ, lst, lat);
     }
@@ -666,8 +678,8 @@ export class AstroVector{
      * @param {number} lat - 관측 위도 (라디안)
      * @note 단일 좌표 변환용. 다수의 좌표는 AstroMatrix 사용 권장
      */
-    equ2hor(equ, lst, lat){
-        const mat = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+    equ2hor(equ, lst, lat) {
+        const mat = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         mat.equ2hor(lst, lat);
         this.multiply(mat, equ);
     }
@@ -680,18 +692,24 @@ export class AstroVector{
  *
  * @class
  */
-export class AstroPoint{
+export class AstroPoint {
+    #x;
+    #y;
+
     /**
      * AstroPoint 인스턴스 생성
      * @param {number} x - X 좌표
      * @param {number} y - Y 좌표
      */
-    constructor(x, y){
-        /** @type {number} X 좌표 */
-        this.x = x
-        /** @type {number} Y 좌표 */
-        this.y = y
+    constructor(x, y) {
+        this.#x = x
+        this.#y = y
     }
+
+    get x() { return this.#x; }
+    get y() { return this.#y; }
+    set x(val) { this.#x = val; }
+    set y(val) { this.#y = val; }
 }
 
 /**
@@ -710,7 +728,21 @@ export class AstroPoint{
  * const result = new AstroVector(0,0,0);
  * result.multiply(mat, equVector);
  */
-export class AstroMatrix{
+export class AstroMatrix {
+    /**
+     * AstroMatrix 인스턴스 생성
+     * @param {number} x11 - 행렬[0][0]
+     * @param {number} x12 - 행렬[0][1]
+     * @param {number} x13 - 행렬[0][2]
+     * @param {number} x21 - 행렬[1][0]
+     * @param {number} x22 - 행렬[1][1]
+     * @param {number} x23 - 행렬[1][2]
+     * @param {number} x31 - 행렬[2][0]
+     * @param {number} x32 - 행렬[2][1]
+     * @param {number} x33 - 행렬[2][2]
+     */
+    #v = [[], [], []];
+
     /**
      * AstroMatrix 인스턴스 생성
      * @param {number} x11 - 행렬[0][0]
@@ -724,14 +756,14 @@ export class AstroMatrix{
      * @param {number} x33 - 행렬[2][2]
      */
     constructor(x11, x12, x13,
-                x21, x22, x23,
-                x31, x32, x33){
-        /** @type {number[][]} 3×3 행렬 데이터 */
-        this.v = [[],[],[]];
+        x21, x22, x23,
+        x31, x32, x33) {
         this.set(x11, x12, x13,
-                x21, x22, x23,
-                x31, x32, x33);
+            x21, x22, x23,
+            x31, x32, x33);
     }
+
+    get v() { return this.#v; }
 
     /**
      * 행렬 값 설정
@@ -747,16 +779,16 @@ export class AstroMatrix{
      */
     set(x11, x12, x13,
         x21, x22, x23,
-        x31, x32, x33){
-        this.v[0][0] = x11;
-        this.v[0][1] = x12;
-        this.v[0][2] = x13;
-        this.v[1][0] = x21;
-        this.v[1][1] = x22;
-        this.v[1][2] = x23;
-        this.v[2][0] = x31;
-        this.v[2][1] = x32;
-        this.v[2][2] = x33;
+        x31, x32, x33) {
+        this.#v[0][0] = x11;
+        this.#v[0][1] = x12;
+        this.#v[0][2] = x13;
+        this.#v[1][0] = x21;
+        this.#v[1][1] = x22;
+        this.#v[1][2] = x23;
+        this.#v[2][0] = x31;
+        this.#v[2][1] = x32;
+        this.#v[2][2] = x33;
     }
 
     /**
@@ -765,8 +797,8 @@ export class AstroMatrix{
      * @param {number} col - 열 인덱스 (0-2)
      * @returns {number} 해당 위치의 값
      */
-    get(row, col){
-        return this.v[row][col];
+    get(row, col) {
+        return this.#v[row][col];
     }
 
     /**
@@ -774,12 +806,12 @@ export class AstroMatrix{
      * @param {AstroMatrix} m1 - 첫 번째 행렬
      * @param {AstroMatrix} m2 - 두 번째 행렬
      */
-    multiply(m1, m2){
-        for(let r = 0; r < 3; r++){
-            for(let c = 0; c < 3; c++){
-                this.v[r][c] = 0;
-                for(let i = 0; i < 3; i++){
-                    this.v[r][c] += m1.v[r][i] * m2.v[i][c];
+    multiply(m1, m2) {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                this.#v[r][c] = 0;
+                for (let i = 0; i < 3; i++) {
+                    this.#v[r][c] += m1.#v[r][i] * m2.#v[i][c];
                 }
             }
         }
@@ -790,7 +822,7 @@ export class AstroMatrix{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @param {number} lat - 관측 위도 (라디안)
      */
-    hor2equ(lst, lat){
+    hor2equ(lst, lat) {
         const lst_rad = AstroTime.jd2Time(lst) * AstroMath.H2R;
         const cos_lst = Math.cos(lst_rad);
         const sin_lst = Math.sin(lst_rad);
@@ -806,7 +838,7 @@ export class AstroMatrix{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @param {number} lat - 관측 위도 (라디안)
      */
-    equ2hor(lst, lat){
+    equ2hor(lst, lat) {
         const lst_rad = AstroTime.jd2Time(lst) * AstroMath.H2R;
         const cos_lst = Math.cos(lst_rad);
         const sin_lst = Math.sin(lst_rad);
@@ -822,12 +854,12 @@ export class AstroMatrix{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @param {number} lat - 관측 위도 (라디안)
      */
-    gal2hor(lst, lat){
-        const Equ2Hor = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+    gal2hor(lst, lat) {
+        const Equ2Hor = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         Equ2Hor.equ2hor(lst, lat);
-        const gal2equ = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+        const gal2equ = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         gal2equ.gal2equ();
-        this.multiply(Equ2Hor,gal2equ);
+        this.multiply(Equ2Hor, gal2equ);
     }
 
     /**
@@ -835,19 +867,19 @@ export class AstroMatrix{
      * @param {number} lst - 지방 항성시 (율리우스일 형식)
      * @param {number} lat - 관측 위도 (라디안)
      */
-    ecl2hor(lst, lat){
-        const Equ2Hor = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+    ecl2hor(lst, lat) {
+        const Equ2Hor = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         Equ2Hor.equ2hor(lst, lat);
-        const EclToEqu = new AstroMatrix(0,0,0,0,0,0,0,0,0);
+        const EclToEqu = new AstroMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
         EclToEqu.ecl2equ(lst);
-        this.multiply(Equ2Hor,EclToEqu);
+        this.multiply(Equ2Hor, EclToEqu);
     }
 
     /**
      * 은하 좌표 → 적도 좌표 변환 행렬 생성
      * (상수 행렬 - 시간 무관)
      */
-    gal2equ(){
+    gal2equ() {
         this.set(-0.0669887, 0.4927285, -0.8676008,
             -0.8727558, -0.4503470, -0.1883746,
             -0.4835389, 0.7445846, 0.4601998);
@@ -857,7 +889,7 @@ export class AstroMatrix{
      * 황도 좌표 → 적도 좌표 변환 행렬 생성
      * @param {number} dt - 율리우스일 (황도 경사각 계산용)
      */
-    ecl2equ(dt){
+    ecl2equ(dt) {
         const d = dt - 2451543.5;
         const e = (23.4393 - 3.563e-7 * d) * AstroMath.D2R;
         const cos_e = Math.cos(e);
@@ -871,7 +903,7 @@ export class AstroMatrix{
      * 적도 좌표 → 황도 좌표 변환 행렬 생성
      * @param {number} dt - 율리우스일 (황도 경사각 계산용)
      */
-    equ2ecl(dt){
+    equ2ecl(dt) {
         const d = dt - 2451543.5;
         const e = (23.4393 - 3.563e-7 * d) * AstroMath.D2R;
         const cos_e = Math.cos(e);
@@ -903,7 +935,7 @@ export class AstroMatrix{
  * const pos = proj.project(ra, dec);
  * console.log(pos.x, pos.y);
  */
-export class EquiDistanceProjection{
+export class EquiDistanceProjection {
     /**
      * EquiDistanceProjection 인스턴스 생성
      *
@@ -912,16 +944,29 @@ export class EquiDistanceProjection{
      * @param {number} screenRadius - 화면상 별자리판 원의 반경 (픽셀)
      * @param {number} limitDE - 표시할 적위의 하한값 (라디안, 음수면 남반구까지 표시)
      */
-    constructor(screenRadius, limitDE){
-        /** @type {number} 화면 반경 (픽셀) */
-        this.screenRadius = screenRadius
-        /** @type {number} 적위 한계 (라디안) */
-        this.limitDE = limitDE
-        /** @type {AstroPoint} 재사용 좌표 객체 (메모리 최적화) */
-        this.screenCoord = new AstroPoint(0,0);
-        /** @type {number} 가상 천구 반경 (투영 스케일 팩터) */
-        this.virtualCelestrialRadius = screenRadius / Math.abs(AstroMath.HPI - limitDE);
+    #screenRadius;
+    #limitDE;
+    #screenCoord;
+    #virtualCelestrialRadius;
+
+    /**
+     * EquiDistanceProjection 인스턴스 생성
+     *
+     * 화면 반경과 적위 한계값으로 천구의 가상 반경을 계산합니다.
+     *
+     * @param {number} screenRadius - 화면상 별자리판 원의 반경 (픽셀)
+     * @param {number} limitDE - 표시할 적위의 하한값 (라디안, 음수면 남반구까지 표시)
+     */
+    constructor(screenRadius, limitDE) {
+        this.#screenRadius = screenRadius
+        this.#limitDE = limitDE
+        this.#screenCoord = new AstroPoint(0, 0);
+        this.#virtualCelestrialRadius = screenRadius / Math.abs(AstroMath.HPI - limitDE);
     }
+
+    get screenRadius() { return this.#screenRadius; }
+    get limitDE() { return this.#limitDE; }
+    get virtualCelestrialRadius() { return this.#virtualCelestrialRadius; }
 
     /**
      * 적경/적위를 화면 좌표로 투영
@@ -931,10 +976,10 @@ export class EquiDistanceProjection{
      * @note 반환되는 AstroPoint는 내부 객체를 재사용하므로,
      *       값을 보존하려면 복사 필요
      */
-    project(ra,dec){
-        const decScreen = (AstroMath.HPI - dec) * this.virtualCelestrialRadius;
-        this.screenCoord.x = decScreen * Math.cos(ra);
-        this.screenCoord.y = decScreen * Math.sin(ra);
-        return this.screenCoord;
+    project(ra, dec) {
+        const decScreen = (AstroMath.HPI - dec) * this.#virtualCelestrialRadius;
+        this.#screenCoord.x = decScreen * Math.cos(ra);
+        this.#screenCoord.y = decScreen * Math.sin(ra);
+        return this.#screenCoord;
     }
 }

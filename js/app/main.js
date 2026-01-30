@@ -30,10 +30,14 @@ if (savedTheme === "dark") {
 
 // 2. 초기 위치 정보 설정
 const savedLocStr = localStorage.getItem(STORAGE_KEYS.LOCATION);
-let initialLoc = DEFAULT_LOCATION;
+let initialLoc = { ...DEFAULT_LOCATION };
+
 if (savedLocStr) {
     try {
-        initialLoc = JSON.parse(savedLocStr);
+        const parsed = JSON.parse(savedLocStr);
+        initialLoc = { ...initialLoc, ...parsed };
+
+        // 레거시 데이터 보정
         if (initialLoc.dgmt === undefined) {
             initialLoc.dgmt = TimezoneService.getGeographicOffset(initialLoc.lon);
         }
@@ -43,6 +47,9 @@ if (savedLocStr) {
     } catch (e) {
         console.error("Failed to parse saved location", e);
     }
+} else {
+    // 첫 실행 시 기본값을 명시적으로 저장
+    localStorage.setItem(STORAGE_KEYS.LOCATION, JSON.stringify(initialLoc));
 }
 
 // 3. Planisphere 초기화

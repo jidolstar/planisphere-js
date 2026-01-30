@@ -6,26 +6,31 @@
  */
 
 export default class ControlPanel {
+    #planisphere;
+    #date;
+    #time;
+    #now;
+
     constructor(planisphere) {
-        this.planisphere = planisphere;
+        this.#planisphere = planisphere;
 
         // --- DOM 요소 ---
-        this.$date = document.getElementById('ps-date');
-        this.$time = document.getElementById('ps-time');
-        this.$now = document.getElementById('ps-now');
+        this.#date = document.getElementById('ps-date');
+        this.#time = document.getElementById('ps-time');
+        this.#now = document.getElementById('ps-now');
 
-        this._initEvents();
-        this.initNow();
+        this.#initEvents();
+        this.#initNow();
     }
 
     // 공통: input값 → Date 변환
-    getDateFromInputs() {
-        if (!this.$date.value || !this.$time.value) return null;
-        return new Date(`${this.$date.value}T${this.$time.value}`);
+    #getDateFromInputs() {
+        if (!this.#date.value || !this.#time.value) return null;
+        return new Date(`${this.#date.value}T${this.#time.value}`);
     }
 
     // 초기값 현재 시간 반영
-    initNow() {
+    #initNow() {
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         const Y = now.getFullYear();
@@ -33,44 +38,44 @@ export default class ControlPanel {
         const D = pad(now.getDate());
         const h = pad(now.getHours());
         const m = pad(now.getMinutes());
-        this.$date.value = `${Y}-${M}-${D}`;
-        this.$time.value = `${h}:${m}`;
-        this.planisphere.setDateTime(now);
+        this.#date.value = `${Y}-${M}-${D}`;
+        this.#time.value = `${h}:${m}`;
+        this.#planisphere.setDateTime(now);
     }
 
-    _initEvents() {
+    #initEvents() {
         // input 변경 이벤트
-        this.$date.addEventListener('change', () => {
-            const dt = this.getDateFromInputs();
-            if (dt) this.planisphere.setDateTime(dt);
+        this.#date.addEventListener('change', () => {
+            const dt = this.#getDateFromInputs();
+            if (dt) this.#planisphere.setDateTime(dt);
         });
-        this.$time.addEventListener('change', () => {
-            const dt = this.getDateFromInputs();
-            if (dt) this.planisphere.setDateTime(dt);
+        this.#time.addEventListener('change', () => {
+            const dt = this.#getDateFromInputs();
+            if (dt) this.#planisphere.setDateTime(dt);
         });
 
         // "지금" 버튼
-        this.$now.addEventListener('click', () => {
-            this.initNow();
+        this.#now.addEventListener('click', () => {
+            this.#initNow();
         });
 
         // 프리셋 버튼들
         document.querySelectorAll('.ps-preset').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!this.$date.value) return;
-                const [Y, M, D] = this.$date.value.split('-').map(Number);
+                if (!this.#date.value) return;
+                const [Y, M, D] = this.#date.value.split('-').map(Number);
                 const h = Number(btn.dataset.preset);
                 const dt = new Date(Y, M - 1, D, h, 0, 0);
                 const pad = n => String(n).padStart(2, '0');
-                this.$time.value = `${pad(h)}:00`;
-                this.planisphere.setDateTime(dt);
+                this.#time.value = `${pad(h)}:00`;
+                this.#planisphere.setDateTime(dt);
             });
         });
 
         // 증감 버튼 바인딩
         const bindAdjust = (id, unit, delta) => {
             const el = document.getElementById(id);
-            if (el) el.onclick = () => this.adjust(unit, delta);
+            if (el) el.onclick = () => this.#adjust(unit, delta);
         };
 
         bindAdjust('year-minus', 'year', -1);
@@ -98,8 +103,8 @@ export default class ControlPanel {
     }
 
     // --- 증감 버튼 유틸 ---
-    adjust(unit, delta) {
-        const dt = this.getDateFromInputs();
+    #adjust(unit, delta) {
+        const dt = this.#getDateFromInputs();
         if (!dt) return;
         switch (unit) {
             case 'year': dt.setFullYear(dt.getFullYear() + delta); break;
@@ -114,8 +119,8 @@ export default class ControlPanel {
         const D = pad(dt.getDate());
         const h = pad(dt.getHours());
         const m = pad(dt.getMinutes());
-        this.$date.value = `${Y}-${M}-${D}`;
-        this.$time.value = `${h}:${m}`;
-        this.planisphere.setDateTime(dt);
+        this.#date.value = `${Y}-${M}-${D}`;
+        this.#time.value = `${h}:${m}`;
+        this.#planisphere.setDateTime(dt);
     }
 }
