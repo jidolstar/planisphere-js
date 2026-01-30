@@ -6,9 +6,6 @@
 
 누구나 시간과 장소에 따라 보이는 하늘을 쉽게 확인할 수 있도록 만든 도구로, **과학 선생님과 학생들이 우주와 천문학에 조금 더 흥미를 가지길 바라는 마음**에서 제작했습니다.
 
-- 상업적 목적이 아니라면 개인이나 단체에서 자유롭게, 무료로 활용할 수 있습니다.
-  - [라이선스 확인하기](LICENSE.md)
-
 - **사용하기**: [아빠별 별자리판](https://jidolstar.github.io/planisphere-js/)
     - 회전: 마우스 왼쪽 버튼 누르고 드래그
     - 확대/축소: 마우스 휠
@@ -19,10 +16,6 @@
 참고로 이 프로젝트는 예전에 천문노트(astronote.org, 현재는 닫힘)에서 제공하던 Flash 버전을, 요즘 웹 환경에서 동작하도록 새롭게 구현한 것입니다.
 
 추가 문의는 제작자 **지용호(jidolstar@지메일)** 로 연락 주시면 됩니다.
-
-
----
-
 
 ---
 
@@ -77,54 +70,27 @@ import Planisphere from 'planisphere-js';
 
 `examples/` 폴더에 인터랙티브 예제가 포함되어 있습니다.
 
-### 별자리판 기본 사용
+### 온라인 데모
+
+- 🌟 [아빠별 별자리판 사용 예시](https://jidolstar.github.io/planisphere-js/examples/basic-usage.html)
+- 🔭 [천문 라이브러리 사용 예시](https://jidolstar.github.io/planisphere-js/examples/astronomy-standalone.html)
+
+### 빠른 시작
 
 ```javascript
-import Planisphere from './js/core/planisphere.js';
+import Planisphere from 'planisphere-js';
 
 (async () => {
-  // 별자리판 생성 (서울 기준)
-  const planisphere = new Planisphere({
-      wrapperDomId: '#planisphere',
-      currentDate: new Date(),
-      lon: 126.98,   // 경도 (동경)
-      lat: 37.57,    // 위도 (북위)
-      dgmt: 9,       // UTC+9 (한국 표준시)
-      tzName: 'Asia/Seoul'  // IANA 타임존 이름 (선택사항)
+  const ps = new Planisphere({
+    wrapperDomId: '#planisphere',
+    lon: 126.98,
+    lat: 37.57
   });
-
-  // 비동기 초기화 (필수)
-  await planisphere.initialize();
-
-  // API 사용
-  planisphere.setDateTime(new Date(2024, 5, 21, 21, 0, 0));  // 날짜/시간 변경
-  await planisphere.setLocation(129.08, 35.18);              // 위치 변경 (부산)
-  planisphere.setTheme('dark');                              // 테마: 'default', 'dark', 'light'
+  await ps.initialize();
 })();
 ```
 
-### 천문학 라이브러리 독립 사용
-
-`astronomy.js`는 별자리판과 독립적으로 사용 가능한 순수 천문학 계산 라이브러리입니다.
-
-```javascript
-import { AstroTime, AstroMath, AstroVector } from './js/core/astronomy.js';
-
-// 율리우스일 계산
-const jd = AstroTime.jd(2024, 6, 21, 12, 0, 0);  // 2460482.0
-
-// 진정오 계산 (서울)
-const astroTime = new AstroTime(9, 126.98, 37.57);
-const solarNoon = astroTime.lasn(2024, 6, 21);   // 약 12.5시
-
-// 좌표 변환 (북극성)
-const star = new AstroVector(0, 0, 0);
-star.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
-```
-
-> 온라인 데모:
-> - [별자리판 기본 사용 (Demo)](https://jidolstar.github.io/planisphere-js/examples/basic-usage.html)
-> - [천문학 라이브러리 독립 사용 (Demo)](https://jidolstar.github.io/planisphere-js/examples/astronomy-standalone.html)
+더 자세한 사용법과 API 예시는 [examples 폴더](./examples/)를 참고하세요.
 
 
 ---
@@ -245,14 +211,14 @@ npm run test:watch
 
 ## 버전
 
-- **1.3.0 / 2026-01** : 남반구 지원 및 레이아웃 최적화
+- **1.3.0 / 2026-01-31** : 남반구 지원 및 레이아웃 최적화
   - **남반구 공식 지원**: 위도에 따른 렌더링 방향 및 투영 수식을 최적화하여 남반구에서도 정확한 별자리판 제공
   - **다이내믹 UI 레이아웃**: 위도(고위도/저위도)에 따라 별자리판의 크기와 한계 적위가 유연하게 조절되는 동적 레이아웃 적용
   - **상태 유지 기능**: 테마 변경 시에도 현재의 확대 배율(Zoom)과 이동 위치(Pan)가 초기화되지 않고 유지되도록 개선
   - **상호작용 품질 향상**: 지도 모달 멀티터치 지원 및 모바일/데스크톱 통합 입력 처리 고도화
   - **내부 구조화**: `EquiDistanceProjection`의 한계 적위 계산 로직 내재화 및 코드 안정성 강화
 
-- **1.2.0 / 2026-01** : 타임존 시스템 고도화 및 프로젝트 리팩토링
+- **1.2.0 / 2026-01-30** : 타임존 시스템 고도화 및 프로젝트 리팩토링
   - **고급 타임존 자동 검색**: `tz-lookup` 라이브러리를 동적으로 로드하여 전 세계 정치적 타임존(IANA)을 자동으로 감지
   - **하이브리드 전략**: 네트워크/데이터 부재 시 경도 기반 지표 계산(Geographic Fallback) 및 사용자 수동 오프셋 설정 지원
   - **데이터 유지(Persistence)**: 선택한 위치와 타임존 이름(`Asia/Seoul` 등)을 `localStorage`에 저장 및 복구
@@ -260,9 +226,9 @@ npm run test:watch
   - **지도 매핑 개선**: 태평양 중심의 새로운 세계 지도(`world_map.jpg`) 도입 및 30도 오프셋 보정 수식 정밀화
   - **최적화**: 디버그 로그 제거, 모달 레이아웃 최적화, 스크롤바 제거
 
-- **1.1.1 / 2026-01** : 플랫폼별 최적화 및 리팩토링
+- **1.1.1 / 2026-01-29** : 플랫폼별 최적화 및 리팩토링
 
-- **1.1.0 / 2026-01** : 사파리 브라우저 적용 및 ES6 모듈 리팩토링
+- **1.1.0 / 2026-01-29** : 사파리 브라우저 적용 및 ES6 모듈 리팩토링
   - 맥OS 사파리에서 SVG.js가 제대로 작동하지 않는 버그 수정
   - SVG 폰트가 제대로 적용되지 않는 버그 수정
   - 5개 모듈로 분리 (astronomy, models, renderers, constants, planisphere)
@@ -270,13 +236,13 @@ npm run test:watch
   - 단위 테스트 104개 추가
   - 사용 예제 추가
 
-- 1.0.3 / 2025-09-20 : 최신 SVG 라이브러리로 교체
+- **1.0.3 / 2025-09-20** : 최신 SVG 라이브러리로 교체
   - SVG 라이브러리 교체에 따른 글자 위치 틀어짐 교정
 
-- 1.0.2 / 2025-09-15 : 지금/밤9시/자정 버튼 버그 fix
+- **1.0.2 / 2025-09-15** : 지금/밤9시/자정 버튼 버그 fix
   - [issue/1](https://github.com/jidolstar/planisphere-js/issues/1)
 
-- 1.0.1 / 2025-09-13 : 최초 버전
+- **1.0.1 / 2025-09-13** : 최초 버전
   - 적경, 적위, 6등성까지 주요 별, 별자리선 렌더링
   - 진정오 기반 적경-날짜 정렬
   - 이동, 회전, 확대/축소 기능
