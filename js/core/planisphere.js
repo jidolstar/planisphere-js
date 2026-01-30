@@ -608,8 +608,8 @@ class Planisphere {
         this.#currentDate = currentDate;
         this.#initialLon = lon;
         this.#initialLat = lat;
-        this.#initialDgmt = dgmt ?? 0;
-        this.#initialTzName = tzName || "";
+        this.#initialDgmt = dgmt;
+        this.#initialTzName = tzName;
         this.#initialStyles = styles;
     }
 
