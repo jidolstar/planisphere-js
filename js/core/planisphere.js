@@ -1,7 +1,7 @@
 /**
  * @fileoverview 별자리판 JS - 메인 컨트롤러
  * @author 지용호 <jidolstar@gmail.com>
- * @version 1.1.3
+ * @version 1.3.0
  * @license MIT
  *
  * @description
@@ -62,6 +62,9 @@ import {
     TimeRingRenderer,
     InfoPanelRenderer
 } from './renderers.js';
+
+// SVG.js 라이브러리 직접 import (사용자가 HTML에 별도로 넣지 않아도 되도록 함)
+import { SVG } from 'https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2/dist/svg.esm.js';
 
 /**
  * 입력 처리 통합 클래스
@@ -610,15 +613,22 @@ class Planisphere {
         wrapper.innerHTML = '';
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
-        wrapper.style.height = '100vh';
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.overflow = 'hidden';
+
+        // 실제 높이가 0이면(CSS 등에 정의되지 않았으면) 기본값 지정
+        const computedHeight = parseFloat(window.getComputedStyle(wrapper).height);
+        if (isNaN(computedHeight) || computedHeight <= 0) {
+            wrapper.style.height = '600px';
+        }
 
         // planisphere 영역 생성
         const planisphereDiv = document.createElement('div');
-        planisphereDiv.style.position = 'absolute';
-        planisphereDiv.style.left = '50%';
-        planisphereDiv.style.top = '50%';
-        planisphereDiv.style.transform = 'translate(-50%, -50%)';
+        planisphereDiv.style.flex = '0 0 auto';
         planisphereDiv.style.touchAction = 'none';
+        planisphereDiv.style.position = 'relative';
         wrapper.appendChild(planisphereDiv);
 
         //부모 Dom
@@ -656,7 +666,21 @@ class Planisphere {
         });
 
         this.setStyles(styles, true);
+
+        // 창 크기 변경 시 대응
+        window.addEventListener('resize', this.#resize.bind(this));
     }
+
+    /** @type {Date} */
+    get currentDate() { return this.#currentDate; }
+    /** @type {number} */
+    get lon() { return this.#astroTime.glon * AstroMath.R2D; }
+    /** @type {number} */
+    get lat() { return this.#astroTime.glat * AstroMath.R2D; }
+    /** @type {number} */
+    get dgmt() { return this.#astroTime.dgmt; }
+    /** @type {string} */
+    get tzName() { return this.#tzName; }
     /**
      * 런타임 스타일 변경
      *

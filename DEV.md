@@ -130,11 +130,10 @@ js/__tests__/
 
 ## 주요 구현 참고사항
 
-### 세계 지도 좌표 매핑 (world_map.jpg)
-- **투영 방식**: Equirectangular (Plate Carrée)
-- **중심**: 태평양 (경도 180°) 중심
-- **오프셋**: 본초 자오선(0°)이 이미지의 왼쪽 끝에서 약 30도(8.3%) 지점에 위치함.
-- **수식**: `xRatio = ((lon + 30 + 360) % 360) / 360`
+### 등거리 방위 투영 (EquiDistanceProjection)
+- **중심**: 북반구는 천구 북극(DE +90°), 남반구는 천구 남극(DE -90°)을 중심점으로 사용합니다.
+- **적위 한계 (limitDE)**: 위도에 따라 가시 범위가 변하므로 `EquiDistanceProjection.calculateLimitDE(lat)`를 통해 지평선 아래 20도까지의 범위를 자동으로 계산합니다.
+- **방위각 (RA) 처리**: 남반구 투영(`isSouthern: true`) 시 별의 일주 운동 방향을 맞추기 위해 적경(RA) 값에 음수 부호를 적용하여 투영합니다.
 
 ### 타임존 하이브리드 전략
 1. **정밀 검색**: `TimezoneService`를 통해 `tz-lookup` 라이브러리를 동적으로 `fetch`하여 IANA 타임존 명칭과 오프셋을 추출합니다.

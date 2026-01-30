@@ -1,337 +1,127 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>astronomy.js 독립 사용 예제</title>
+    <title>astronomy.js - 독립 사용 가이드</title>
     <style>
+        :root {
+            --accent: #10b981;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-            background: #0d1117;
-            color: #c9d1d9;
+            padding: 40px 20px;
             line-height: 1.6;
         }
-        h1 { color: #58a6ff; }
-        h2 { color: #79c0ff; margin-top: 2em; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
-        h3 { color: #a5d6ff; }
-        pre {
-            background: #161b22;
-            padding: 16px;
-            border-radius: 6px;
-            overflow-x: auto;
-            border: 1px solid #30363d;
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
         }
-        code { color: #79c0ff; }
-        .result {
-            background: #1f2937;
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin: 10px 0;
-            border-left: 3px solid #58a6ff;
-            font-family: monospace;
+
+        .header h1 {
+            color: var(--accent);
+            font-size: 2.2rem;
         }
-        .interactive {
-            background: #21262d;
-            padding: 20px;
-            border-radius: 8px;
+
+        .code-section {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #334155;
             margin: 20px 0;
         }
-        input, select {
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #30363d;
-            background: #0d1117;
-            color: #c9d1d9;
-            margin: 5px;
+
+        h2 {
+            color: var(--accent);
+            margin-top: 2em;
         }
-        button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            background: #238636;
-            color: #fff;
-            cursor: pointer;
-            margin: 5px;
+
+        code {
+            color: var(--accent);
+            font-family: monospace;
         }
-        button:hover { background: #2ea043; }
-        .note {
-            background: #0d1117;
-            border: 1px solid #3fb950;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
+
+        pre {
+            overflow-x: auto;
+            font-size: 0.9rem;
+            color: #bae6fd;
         }
-        .note::before {
-            content: "💡 ";
+
+        .demo-box {
+            background: #111827;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+            margin: 15px 0;
+            font-family: monospace;
         }
     </style>
 </head>
+
 <body>
-    <h1>astronomy.js 독립 사용 예제</h1>
+
+    <div class="header">
+        <h1>astronomy.js 독립 사용법</h1>
+        <p>별자리판 없이 순수 천문 계산 로직만 가져다 쓰는 방법</p>
+    </div>
 
     <p>
-        <code>astronomy.js</code>는 별자리판과 독립적으로 사용할 수 있는 천문학 계산 라이브러리입니다.
-        다른 프로젝트에서 복사하여 재사용할 수 있습니다.
+        <code>astronomy.js</code>는 다른 라이브러리 의존성 없이 독립적으로 작동합니다.<br>
+        필요한 계산 클래스만 <code>import</code>하여 본인의 프로젝트에 바로 사용하세요.
     </p>
 
-    <div class="note">
-        이 모듈은 외부 의존성 없이 순수 JavaScript로 작성되었습니다.
+    <!-- 예제 1 -->
+    <h2>1. 율리우스일(JD) 및 시간 변환</h2>
+    <div class="code-section">
+        <pre><code>import { AstroTime } from '../js/core/astronomy.js';
+
+// 1. 특정 날짜의 율리우스일 계산
+const jd = AstroTime.jd(2024, 12, 25, 21, 0, 0);
+
+// 2. 서울(UTC+9, 경도 126.9) 기준 항성시 계산 객체 생성
+const at = new AstroTime(9, 126.9, 37.5);
+const lst = at.LCT2LST(jd); // 지방 항성시</code></pre>
+
+        <div id="result-jd" class="demo-box">계산 중...</div>
     </div>
 
-    <h2>1. 임포트</h2>
-    <pre><code>import {
-    AstroMath,              // 상수 및 유틸리티
-    AstroTime,              // 시간 변환
-    AstroVector,            // 3D 벡터
-    AstroMatrix,            // 좌표 변환 행렬
-    AstroPoint,             // 2D 포인트
-    EquiDistanceProjection  // 등거리 투영
-} from './js/src/astronomy.js';</code></pre>
+    <!-- 예제 2 -->
+    <h2>2. 좌표 투영 (EquiDistanceProjection)</h2>
+    <div class="code-section">
+        <pre><code>import { AstroMath, EquiDistanceProjection } from '../js/core/astronomy.js';
 
-    <h2>2. 단위 변환 (AstroMath)</h2>
-    <pre><code>// 도(degree) → 라디안
-const rad = 45 * AstroMath.D2R;  // 0.7854...
+// 관측지 위도(서울) 기준 투영기 생성
+const proj = new EquiDistanceProjection(300, 37.5 * AstroMath.D2R);
 
-// 라디안 → 도
-const deg = Math.PI * AstroMath.R2D;  // 180
+// 적경(RA) 6h, 적위(Dec) 45도인 별의 화면 x, y 좌표
+const pos = proj.project(6 * AstroMath.H2R, 45 * AstroMath.D2R);</code></pre>
 
-// 시(hour) → 라디안 (적경 변환용)
-const raRad = 6 * AstroMath.H2R;  // 6시 = π/2 라디안
-
-// 값 정규화 (범위 내로 맞춤)
-AstroMath.normalize(450, 0, 360);  // 90
-AstroMath.normalize(-30, 0, 360);  // 330
-AstroMath.normalize(25, 0, 24);    // 1 (시간)</code></pre>
-
-    <div class="interactive">
-        <h3>단위 변환 계산기</h3>
-        <input type="number" id="degInput" value="45" style="width:80px"> 도 =
-        <span id="radOutput" class="result">0.7854</span> 라디안
-        <button onclick="convertDeg()">변환</button>
+        <div id="result-proj" class="demo-box">계산 중...</div>
     </div>
-
-    <h2>3. 율리우스일 계산 (AstroTime)</h2>
-    <pre><code>// 율리우스일 계산
-const jd = AstroTime.jd(2024, 6, 21, 12, 0, 0);
-// → 2460482.0 (2024년 하지 정오)
-
-// J2000.0 기원 (2000년 1월 1일 12:00)
-const j2000 = AstroTime.jd(2000, 1, 1, 12, 0, 0);
-// → 2451545.0
-
-// 윤년 판단
-AstroTime.isLeapYear(2024);  // true
-AstroTime.isLeapYear(2023);  // false
-AstroTime.isLeapYear(2000);  // true (400으로 나누어짐)
-AstroTime.isLeapYear(1900);  // false (100으로 나누어지지만 400으로 안 나누어짐)</code></pre>
-
-    <div class="interactive">
-        <h3>율리우스일 계산기</h3>
-        <input type="number" id="jdYear" value="2024" style="width:60px">년
-        <input type="number" id="jdMonth" value="6" style="width:40px" min="1" max="12">월
-        <input type="number" id="jdDay" value="21" style="width:40px" min="1" max="31">일
-        <input type="number" id="jdHour" value="12" style="width:40px" min="0" max="23">시
-        <button onclick="calcJD()">계산</button>
-        <div id="jdResult" class="result">JD = 2460482.0</div>
-    </div>
-
-    <h2>4. 시간 변환 체인 (AstroTime)</h2>
-    <pre><code>// 서울 기준 시간 변환기 생성
-const astroTime = new AstroTime(
-    9,       // UTC+9 (한국 표준시)
-    126.98,  // 경도 (동경)
-    37.57    // 위도 (북위)
-);
-
-// 지방 표준시(LCT) → 세계시(UT)
-const lct = AstroTime.jd(2024, 6, 21, 21, 0, 0);  // 한국 시간 21시
-const ut = astroTime.LCT2UT(lct);
-// → 2024년 6월 21일 12:00 UT
-
-// 세계시(UT) → 그리니치 항성시(GST)
-const gst = AstroTime.UT2GST(ut);
-
-// 그리니치 항성시(GST) → 지방 항성시(LST)
-const lst = astroTime.GST2LST(gst);
-
-// 또는 한 번에 변환
-const lstDirect = astroTime.LCT2LST(lct);</code></pre>
-
-    <h2>5. 진정오 계산 (Local Apparent Solar Noon)</h2>
-    <pre><code>const astroTime = new AstroTime(9, 126.98, 37.57);
-
-// 2024년 6월 21일 서울의 진정오 시각
-const solarNoon = astroTime.lasn(2024, 6, 21);
-// → 약 12.5시 (12시 30분경)
-
-// 진정자정
-const solarMidnight = astroTime.lamn(2024, 6, 21);
-// → 약 0.5시 (0시 30분경)
-
-// 시각방정식 (분 단위)
-const eot = AstroTime.equationOfTimeMinutes(2024, 2, 11);
-// → 약 -14분 (2월에는 태양이 평균보다 늦음)</code></pre>
-
-    <div class="interactive">
-        <h3>진정오 계산기</h3>
-        <input type="number" id="lasnYear" value="2024" style="width:60px">년
-        <input type="number" id="lasnMonth" value="6" style="width:40px" min="1" max="12">월
-        <input type="number" id="lasnDay" value="21" style="width:40px" min="1" max="31">일
-        <br>
-        경도: <input type="number" id="lasnLon" value="126.98" style="width:70px">°
-        시간대: UTC+<input type="number" id="lasnTz" value="9" style="width:40px">
-        <button onclick="calcLASN()">계산</button>
-        <div id="lasnResult" class="result">진정오: 12:30</div>
-    </div>
-
-    <h2>6. 좌표 변환 (AstroVector)</h2>
-    <pre><code>// 3D 벡터 생성
-const vec = new AstroVector(0, 0, 0);
-
-// 구면 좌표로 설정 (적경, 적위)
-const ra = 2.5 * AstroMath.H2R;    // 적경 2.5시
-const dec = 89.26 * AstroMath.D2R; // 적위 89.26도 (북극성)
-vec.setSphe(ra, dec);
-
-// 직교 좌표 확인
-console.log(vec.x, vec.y, vec.z);
-
-// 역으로 구면 좌표 추출
-const longitude = vec.lon();  // 라디안
-const latitude = vec.lat();   // 라디안</code></pre>
-
-    <h2>7. 적도→지평 좌표 변환</h2>
-    <pre><code>// 북극성 좌표 (적경 2.5h, 적위 89.26°)
-const polaris = new AstroVector(0, 0, 0);
-polaris.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
-
-// 서울에서 관측
-const lst = astroTime.LCT2LST(AstroTime.jd(2024, 6, 21, 21, 0, 0));
-const lat = 37.57 * AstroMath.D2R;
-
-// 지평 좌표로 변환
-const horizontal = new AstroVector(0, 0, 0);
-horizontal.equ2hor(polaris, lst, lat);
-
-// 방위각과 고도 추출
-const azimuth = horizontal.lon() * AstroMath.R2D;   // 도
-const altitude = horizontal.lat() * AstroMath.R2D;  // 도
-// → 북극성의 고도는 약 37° (서울 위도와 거의 같음)</code></pre>
-
-    <div class="interactive">
-        <h3>별의 고도 계산기</h3>
-        적경: <input type="number" id="starRA" value="2.5" style="width:60px" step="0.1">시
-        적위: <input type="number" id="starDec" value="89.26" style="width:60px">°
-        <br>
-        관측 위도: <input type="number" id="obsLat" value="37.57" style="width:60px">°
-        <button onclick="calcAltitude()">계산</button>
-        <div id="altResult" class="result">고도: 37°</div>
-    </div>
-
-    <h2>8. 등거리 투영 (EquiDistanceProjection)</h2>
-    <pre><code>// 투영기 생성 (화면 반경 300px, 적위 한계 -30°)
-const proj = new EquiDistanceProjection(
-    300,                    // 화면 반경 (픽셀)
-    -30 * AstroMath.D2R     // 표시할 최저 적위
-);
-
-// 별의 적경/적위를 화면 좌표로 투영
-const ra = 6 * AstroMath.H2R;     // 적경 6시
-const dec = 45 * AstroMath.D2R;   // 적위 45°
-const screenPos = proj.project(ra, dec);
-
-console.log(screenPos.x, screenPos.y);
-// → 화면의 x, y 좌표 (픽셀)
-
-// 주의: project()는 내부 객체를 재사용하므로
-// 값을 보존하려면 즉시 복사해야 함
-const savedX = screenPos.x;
-const savedY = screenPos.y;</code></pre>
-
-    <h2>9. Node.js에서 사용</h2>
-    <pre><code>// astronomy.js를 복사하여 사용
-import { AstroTime, AstroMath } from './astronomy.js';
-
-// 현재 시간의 율리우스일
-const now = new Date();
-const jd = AstroTime.jd(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-    now.getSeconds()
-);
-
-console.log(`현재 율리우스일: ${jd.toFixed(6)}`);</code></pre>
 
     <script type="module">
-        import { AstroMath, AstroTime, AstroVector, EquiDistanceProjection } from '../js/src/astronomy.js';
+        import { AstroMath, AstroTime, EquiDistanceProjection } from '../js/core/astronomy.js';
 
-        // 단위 변환
-        window.convertDeg = function() {
-            const deg = parseFloat(document.getElementById('degInput').value);
-            const rad = deg * AstroMath.D2R;
-            document.getElementById('radOutput').textContent = rad.toFixed(6);
-        };
+        // 1. JD 데모
+        const now = new Date();
+        const jdNow = AstroTime.jd(now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
+        document.getElementById('result-jd').innerText = `현재 시각 JD: ${jdNow.toFixed(6)}`;
 
-        // 율리우스일 계산
-        window.calcJD = function() {
-            const y = parseInt(document.getElementById('jdYear').value);
-            const m = parseInt(document.getElementById('jdMonth').value);
-            const d = parseInt(document.getElementById('jdDay').value);
-            const h = parseInt(document.getElementById('jdHour').value);
-            const jd = AstroTime.jd(y, m, d, h, 0, 0);
-            const isLeap = AstroTime.isLeapYear(y) ? '윤년' : '평년';
-            document.getElementById('jdResult').innerHTML = `JD = ${jd.toFixed(6)}<br>(${y}년은 ${isLeap})`;
-        };
-
-        // 진정오 계산
-        window.calcLASN = function() {
-            const y = parseInt(document.getElementById('lasnYear').value);
-            const m = parseInt(document.getElementById('lasnMonth').value);
-            const d = parseInt(document.getElementById('lasnDay').value);
-            const lon = parseFloat(document.getElementById('lasnLon').value);
-            const tz = parseInt(document.getElementById('lasnTz').value);
-
-            const astroTime = new AstroTime(tz, lon, 37.57);
-            const lasn = astroTime.lasn(y, m, d);
-            const hours = Math.floor(lasn);
-            const minutes = Math.round((lasn - hours) * 60);
-            const eot = AstroTime.equationOfTimeMinutes(y, m, d);
-
-            document.getElementById('lasnResult').innerHTML =
-                `진정오: ${hours}:${minutes.toString().padStart(2, '0')}<br>` +
-                `시각방정식: ${eot > 0 ? '+' : ''}${eot.toFixed(1)}분`;
-        };
-
-        // 별의 고도 계산
-        window.calcAltitude = function() {
-            const ra = parseFloat(document.getElementById('starRA').value) * AstroMath.H2R;
-            const dec = parseFloat(document.getElementById('starDec').value) * AstroMath.D2R;
-            const obsLat = parseFloat(document.getElementById('obsLat').value) * AstroMath.D2R;
-
-            // 간단히 자오선 통과 시 고도 계산
-            // 자오선 통과 시 고도 = 90° - |위도 - 적위|
-            const meridianAlt = 90 - Math.abs(obsLat * AstroMath.R2D - dec * AstroMath.R2D);
-            const altitudeAtMeridian = meridianAlt;
-
-            // 북극 근처 별은 항상 지평선 위
-            const circumpolar = dec > (AstroMath.HPI - obsLat);
-
-            document.getElementById('altResult').innerHTML =
-                `자오선 통과 시 고도: ${altitudeAtMeridian.toFixed(1)}°<br>` +
-                (circumpolar ? '주극성 (항상 지평선 위)' : '');
-        };
-
-        // 초기 계산 실행
-        window.convertDeg();
-        window.calcJD();
-        window.calcLASN();
-        window.calcAltitude();
+        // 2. 투영 데모
+        const proj = new EquiDistanceProjection(200, 37.5 * AstroMath.D2R);
+        const pos = proj.project(0, 89.2 * AstroMath.D2R); // 북극성 근처
+        document.getElementById('result-proj').innerText = `북극성 투영 좌표: x=${pos.x.toFixed(1)}, y=${pos.y.toFixed(1)}`;
     </script>
 </body>
+
 </html>

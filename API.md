@@ -49,13 +49,21 @@
 
 - `hor2equ(lst, lat)` / `equ2hor(lst, lat)`: 좌표 변환 행렬 생성
 
+### EquiDistanceProjection (Class)
+등거리 방위 투영을 담당합니다.
+
+- `constructor(screenRadius, lat)`: 화면 반경과 관측지 위도로 초기화
+- `project(ra, dec)`: 적도 좌표를 2D 화면 좌표로 변환
+- `static calculateLimitDE(lat, buffer)`: 위도별 적절한 적위 한계값 계산
+- `isSouthern`: 남반구 모드 여부 (Boolean)
+
 ### Planisphere (Class)
 메인 컨트롤러입니다.
 
 - `constructor(options)`: 별자리판 초기화
 - `setDateTime(date)`: 날짜/시간 설정
 - `setLocation(lon, lat, dgmt, tzName)`: 장소 및 타임존 설정
-- `setTheme(themeName)`: 테마 설정
+- `setTheme(themeName)`: 테마 설정 (현재의 Zoom/Pan 등 변환 상태 유지)
 - `render()`: 별자리판 강제 업데이트
 
 ## app/ (애플리케이션 UI)

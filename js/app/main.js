@@ -12,7 +12,7 @@ import LocationModal from './location-modal.js';
 import ControlPanel from './control-panel.js';
 import SettingsModal from './settings-modal.js';
 
-const version = '1.2.0';
+const version = '1.3.0';
 
 // 1. 초기 테마 설정
 const savedTheme = localStorage.getItem("planisphereTheme") || "default";
