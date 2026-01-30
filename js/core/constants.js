@@ -13,7 +13,7 @@
  * 프로젝트 버전
  * @constant {string}
  */
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 
 /**
  * 기본 경도: 동경 126.98도 (서울 시청 기준)
