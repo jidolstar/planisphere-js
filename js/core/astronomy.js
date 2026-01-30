@@ -955,22 +955,21 @@ export class EquiDistanceProjection {
      * EquiDistanceProjection 인스턴스 생성
      *
      * 화면 반경과 적위 한계값으로 천구의 가상 반경을 계산합니다.
-     * 관측지 위도에 따라 북극 중심 또는 남극 중심 투영을 선택합니다.
+     * 관측지 위도에 따라 투영 중심과 적위 한계값을 자동으로 결정합니다.
      *
      * @param {number} screenRadius - 화면상 별자리판 원의 반경 (픽셀)
-     * @param {number} limitDE - 표시할 적위의 한계값 (라디안)
      * @param {number} lat - 관측지 위도 (라디안)
      */
-    constructor(screenRadius, limitDE, lat = 37.5 * AstroMath.D2R) {
+    constructor(screenRadius, lat = 37.5 * AstroMath.D2R) {
         this.#screenRadius = screenRadius;
-        this.#limitDE = limitDE;
+        this.#limitDE = EquiDistanceProjection.calculateLimitDE(lat);
         this.#screenCoord = new AstroPoint(0, 0);
 
         this.#isSouthern = lat < 0;
         this.#centerDE = this.#isSouthern ? -AstroMath.HPI : AstroMath.HPI;
 
         // 가상 천구 반경: 중심(극)에서 한계(limitDE) 사이의 각거리와 화면 반경 비율
-        this.#virtualCelestrialRadius = screenRadius / Math.abs(this.#centerDE - limitDE);
+        this.#virtualCelestrialRadius = screenRadius / Math.abs(this.#centerDE - this.#limitDE);
     }
 
     get screenRadius() { return this.#screenRadius; }

@@ -585,7 +585,6 @@ class Planisphere {
         if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
         if (Math.abs(lat) < 10) throw new Error("적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.");
 
-        this.#limitDE = EquiDistanceProjection.calculateLimitDE(lat * AstroMath.D2R);
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
         //스타일 관련 
@@ -603,7 +602,8 @@ class Planisphere {
         this.#gst = AstroTime.UT2GST(this.#ut);
         this.#lst = this.#astroTime.LCT2LST(this.#lct);
 
-        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE, lat * AstroMath.D2R);
+        this.#proj = new EquiDistanceProjection(this.#radius, lat * AstroMath.D2R);
+        this.#limitDE = this.#proj.limitDE;
 
         // wrapper 
         const wrapper = document.querySelector(wrapperDomId);
@@ -735,9 +735,9 @@ class Planisphere {
         this.#astroTime = new AstroTime(newDgmt, lon, lat);
         this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
 
-        // 투영 및 한계 적위 재생성
-        this.#limitDE = EquiDistanceProjection.calculateLimitDE(lat * AstroMath.D2R);
-        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE, lat * AstroMath.D2R);
+        // 투영 재생성
+        this.#proj = new EquiDistanceProjection(this.#radius, lat * AstroMath.D2R);
+        this.#limitDE = this.#proj.limitDE;
 
         // LST 갱신 (위치 필수 업데이트 항목)
         this.#lst = this.#astroTime.LCT2LST(this.#lct);
