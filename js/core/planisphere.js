@@ -875,7 +875,8 @@ class Planisphere {
         const renderer = new InfoPanelRenderer(
             this.#infoGroup,
             this.#styles,
-            this.#version
+            this.#version,
+            this.#astroTime.glat
         );
         renderer.render();
     }

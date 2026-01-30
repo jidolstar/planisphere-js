@@ -45,6 +45,13 @@ export default class LocationModal {
     #lastX = 0;
     #lastY = 0;
 
+    // 멀티터치 관련
+    #pointers = new Map();
+    #pinchStartDist = 0;
+    #pinchStartZoom = 1;
+    #pinchPrevCenterX = 0;
+    #pinchPrevCenterY = 0;
+
     constructor(options) {
         this.#modal = document.getElementById(options.modalId);
         this.#canvas = document.getElementById(options.canvasId);
@@ -323,33 +330,105 @@ export default class LocationModal {
             this.#isDragging = false;
         };
 
-        this.#canvas.addEventListener('mousedown', (e) => onDown(e.offsetX, e.offsetY));
-        window.addEventListener('mousemove', (e) => {
-            if (!this.#isMoving) return;
+        // Pointer Events
+        this.#canvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.#canvas.setPointerCapture(e.pointerId);
+            this.#pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
             const rect = this.#canvas.getBoundingClientRect();
-            onMove(e.clientX - rect.left, e.clientY - rect.top);
-        });
-        window.addEventListener('mouseup', (e) => {
-            if (!this.#isMoving) return;
-            const rect = this.#canvas.getBoundingClientRect();
-            onUp(e.clientX - rect.left, e.clientY - rect.top);
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (this.#pointers.size === 1) {
+                onDown(x, y);
+            } else if (this.#pointers.size === 2) {
+                const pts = Array.from(this.#pointers.values());
+                this.#pinchPrevCenterX = (pts[0].x + pts[1].x) / 2;
+                this.#pinchPrevCenterY = (pts[0].y + pts[1].y) / 2;
+                this.#pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+                this.#pinchStartZoom = this.#zoom;
+                this.#isMoving = true;
+                this.#isDragging = true;
+            }
         });
 
-        // 터치 지원 생략 가능하나 유지함
-        this.#canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                const rect = this.#canvas.getBoundingClientRect();
-                onDown(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-            }
-        }, { passive: false });
-        this.#canvas.addEventListener('touchmove', (e) => {
+        window.addEventListener('pointermove', (e) => {
+            if (!this.#pointers.has(e.pointerId)) return;
             e.preventDefault();
+            this.#pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
             const rect = this.#canvas.getBoundingClientRect();
-            if (e.touches.length === 1) onMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-        }, { passive: false });
-        this.#canvas.addEventListener('touchend', (e) => {
-            if (this.#isMoving) onUp(this.#lastX, this.#lastY);
+
+            if (this.#pointers.size === 2) {
+                const pts = Array.from(this.#pointers.values());
+                const cx = (pts[0].x + pts[1].x) / 2;
+                const cy = (pts[0].y + pts[1].y) / 2;
+
+                // 2손가락 이동 (Panning)
+                const dx = cx - this.#pinchPrevCenterX;
+                const dy = cy - this.#pinchPrevCenterY;
+
+                const sw = this.#mapImg.width / this.#zoom;
+                const sh = this.#mapImg.height / this.#zoom;
+                this.#viewX -= dx * (sw / this.#canvas.width);
+                this.#viewY -= dy * (sh / this.#canvas.height);
+
+                this.#pinchPrevCenterX = cx;
+                this.#pinchPrevCenterY = cy;
+
+                // 핀치 줌 (Zooming)
+                const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+                if (this.#pinchStartDist > 0) {
+                    const ratio = dist / this.#pinchStartDist;
+                    const focalX = cx - rect.left;
+                    const focalY = cy - rect.top;
+
+                    const oldZoom = this.#zoom;
+                    this.#zoom = Math.max(this.#minZoom, Math.min(this.#maxZoom, this.#pinchStartZoom * ratio));
+
+                    if (this.#zoom !== oldZoom) {
+                        const sw_old = this.#mapImg.width / oldZoom;
+                        const sh_old = this.#mapImg.height / oldZoom;
+                        const sx = this.#viewX - sw_old / 2;
+                        const sy = this.#viewY - sh_old / 2;
+                        const mapX = sx + focalX * (sw_old / this.#canvas.width);
+                        const mapY = sy + focalY * (sh_old / this.#canvas.height);
+
+                        const sw_new = this.#mapImg.width / this.#zoom;
+                        const sh_new = this.#mapImg.height / this.#zoom;
+                        this.#viewX = mapX - (focalX / this.#canvas.width - 0.5) * sw_new;
+                        this.#viewY = mapY - (focalY / this.#canvas.height - 0.5) * sh_new;
+                    }
+                }
+
+                this.#clampView();
+                this.draw();
+            } else if (this.#pointers.size === 1) {
+                onMove(e.clientX - rect.left, e.clientY - rect.top);
+            }
         });
+
+        const onPointerUp = (e) => {
+            if (!this.#pointers.has(e.pointerId)) return;
+            this.#pointers.delete(e.pointerId);
+
+            if (this.#pointers.size === 0) {
+                const rect = this.#canvas.getBoundingClientRect();
+                onUp(e.clientX - rect.left, e.clientY - rect.top);
+            } else if (this.#pointers.size === 1) {
+                const [remaining] = this.#pointers.values();
+                const rect = this.#canvas.getBoundingClientRect();
+                this.#lastX = remaining.x - rect.left;
+                this.#lastY = remaining.y - rect.top;
+                this.#startX = this.#lastX;
+                this.#startY = this.#lastY;
+                this.#isDragging = true;
+            }
+        };
+
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
 
         this.#dgmtInput.onchange = () => {
             this.#tempDgmt = parseFloat(this.#dgmtInput.value) || 0;

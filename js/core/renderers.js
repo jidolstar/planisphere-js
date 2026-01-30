@@ -725,24 +725,34 @@ export class InfoPanelRenderer {
     #canvas;
     #styles;
     #version;
+    #lat;
 
     /**
      * InfoPanelRenderer 인스턴스 생성
      * @param {SVG.Container} canvas - SVG.js 캔버스 객체
      * @param {ThemeConfig} styles - 테마 스타일 설정
      * @param {string} version - 버전 문자열 (예: 'v1.0.3 (2024-01-15)')
+     * @param {number} lat - 관측지 위도 (라디안)
      */
-    constructor(canvas, styles, version) {
+    constructor(canvas, styles, version, lat = 37.5 * AstroMath.D2R) {
         this.#canvas = canvas;
         this.#styles = styles;
         this.#version = version;
+        this.#lat = lat;
     }
 
     render() {
         const cx = 0;
         const cy = 0;
+        const absLat = Math.abs(this.#lat);
 
-        // 별 등성 범례
+        // 위도에 따른 보정 계수 (위도가 높을수록 지평선이 올라오므로 더 바깥으로 밀어냄)
+        // 10도(최소) -> 0, 90도 -> 1
+        const latFactor = (absLat * AstroMath.R2D - 10) / 80;
+        const safeFactor = Math.max(0, Math.min(1, latFactor));
+
+        // 1. 별 등성 범례 (좌측 이동)
+        const legendXOffset = -50 * safeFactor;
         let radius = 0.5;
         for (let mag = -1; mag < 5; mag++) {
             if (mag < -1) { radius = 7; }
@@ -755,19 +765,22 @@ export class InfoPanelRenderer {
             else { radius = 0.5; }
 
             this.#canvas.circle(radius * 2)
-                .center(cx - 280 - radius / 2, cy - 170 + mag * 15.2)
+                .center(cx - 280 - radius / 2 + legendXOffset, cy - 170 + mag * 15.2)
                 .fill({ color: this.#styles.legendColor, fill: this.#styles.legendColor });
 
-            this.#canvas.text(`${mag + 2} 등성`).move(cx - 270, cy - 187 + mag * 15.5)
+            this.#canvas.text(`${mag + 2} 등성`).move(cx - 270 + legendXOffset, cy - 187 + mag * 15.5)
                 .font({ fill: this.#styles.legendColor, size: this.#styles.legendTextSize, family: FONT_FAMILY });
         }
 
-        // 타이틀
-        this.#canvas.text(`아빠별 별자리판`).move(cx - 160, cy - 290)
-            .font({ fill: this.#styles.legendColor, size: 50, family: FONT_FAMILY });
+        // 2. 타이틀 (상단 이동 및 크기 조절)
+        const titleYOffset = -40 * safeFactor;
+        const titleSize = 50 - 15 * safeFactor;
+        this.#canvas.text(`아빠별 별자리판`).move(cx - 160, cy - 290 + titleYOffset)
+            .font({ fill: this.#styles.legendColor, size: titleSize, family: FONT_FAMILY });
 
-        // 버전 정보
-        this.#canvas.text(this.#version).center(cx, cy - 200)
+        // 3. 버전 및 라이선스 정보 (하단 이동)
+        const versionYOffset = 250 * safeFactor;
+        this.#canvas.text(this.#version).center(cx, cy - 200 + versionYOffset)
             .font({ fill: this.#styles.legendColor, size: 20, family: FONT_FAMILY });
     }
 }
