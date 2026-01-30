@@ -1,17 +1,45 @@
 {
   "name": "planisphere-js",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Interactive planisphere for science education",
   "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./astronomy": "./js/core/astronomy.js",
+    "./constants": "./js/core/constants.js"
+  },
+  "files": [
+    "js/core",
+    "index.js",
+    "README.md",
+    "LICENSE.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "keywords": [
+    "astronomy",
+    "planisphere",
+    "education",
+    "stars",
+    "constellations",
+    "svg"
+  ],
+  "author": "지용호 <jidolstar@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jidolstar/planisphere-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jidolstar/planisphere-js/issues"
+  },
+  "homepage": "https://github.com/jidolstar/planisphere-js#readme",
   "devDependencies": {
     "vitest": "^2.0.0"
-  },
-  "keywords": ["astronomy", "planisphere", "education", "stars", "constellations"],
-  "author": "지용호 <jidolstar@gmail.com>",
-  "license": "MIT"
+  }
 }

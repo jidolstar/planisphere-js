@@ -10,6 +10,12 @@
  */
 
 /**
+ * 프로젝트 버전
+ * @constant {string}
+ */
+export const VERSION = '1.3.0';
+
+/**
  * 기본 경도: 동경 126.98도 (서울 시청 기준)
  * @constant {number}
  */
@@ -20,20 +26,6 @@ export const DEFAULT_LONGITUDE = 126.98;
  * @constant {number}
  */
 export const DEFAULT_LATITUDE = 37.57;
-
-/**
- * 기본 시간대: 한국 표준시 (UTC+9)
- * @constant {number}
- * @example
- * import { DEFAULT_TIMEZONE } from './constants.js';
- * const utcOffset = DEFAULT_TIMEZONE; // 9
- */
-export const DEFAULT_TIMEZONE = 9;
-/** 
- * 기본 타임존 이름: Asia/Seoul
- * @constant {string}
- */
-export const DEFAULT_TIMEZONE_NAME = 'Asia/Seoul';
 
 /**
  * 기본 관측 위치 (서울)
@@ -48,11 +40,7 @@ export const DEFAULT_LOCATION = {
     /** @type {number} 동경 126.98도 (서울 시청 기준) */
     lon: DEFAULT_LONGITUDE,
     /** @type {number} 북위 37.57도 (서울 시청 기준) */
-    lat: DEFAULT_LATITUDE,
-    /** @type {number} 기본 DGMT */
-    dgmt: DEFAULT_TIMEZONE,
-    /** @type {string} 기본 타임존 이름 */
-    tzName: DEFAULT_TIMEZONE_NAME
+    lat: DEFAULT_LATITUDE
 };
 
 /**

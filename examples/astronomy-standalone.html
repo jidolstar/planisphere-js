@@ -6,121 +6,156 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>astronomy.js - 독립 사용 가이드</title>
     <style>
-        :root {
-            --accent: #10b981;
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text: #f1f5f9;
-        }
-
         body {
-            font-family: system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
             max-width: 900px;
             margin: 0 auto;
             padding: 40px 20px;
             line-height: 1.6;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .header h1 {
-            color: var(--accent);
-            font-size: 2.2rem;
-        }
-
-        .code-section {
-            background: var(--card);
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            margin: 20px 0;
-        }
-
+        h1,
         h2 {
-            color: var(--accent);
-            margin-top: 2em;
+            color: #38bdf8;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 10px;
+            margin-top: 40px;
         }
 
-        code {
-            color: var(--accent);
-            font-family: monospace;
+        .card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #334155;
         }
 
         pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
             overflow-x: auto;
-            font-size: 0.9rem;
-            color: #bae6fd;
+            border: 1px solid #334155;
         }
 
-        .demo-box {
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 4px solid var(--accent);
-            margin: 15px 0;
-            font-family: monospace;
+        code {
+            color: #38bdf8;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .output {
+            color: #10b981;
+            font-weight: bold;
+            background: #064e3b33;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .desc {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>astronomy.js 독립 사용법</h1>
-        <p>별자리판 없이 순수 천문 계산 로직만 가져다 쓰는 방법</p>
+    <h1>✨ astronomy.js 독립 사용 가이드</h1>
+    <p>별자리판 UI 없이 <b>천문학 계산 로직</b>만 필요하신가요? `astronomy.js`는 순수 자바스크립트(ESM)로 작성되어 어떤 프로젝트에서도 독립적으로 사용할 수 있습니다.</p>
+
+    <div class="card">
+        <h3>📦 설치 및 불러오기</h3>
+        <p class="desc">NPM 또는 CDN을 통해 간편하게 시작하세요.</p>
+        <pre><code>// NPM 사용 시
+import { AstroTime, AstroMath, AstroVector } from 'planisphere-js/astronomy';
+
+// CDN 사용 시
+import { AstroTime, AstroMath, AstroVector } from 'https://cdn.jsdelivr.net/npm/planisphere-js/js/core/astronomy.js';</code></pre>
     </div>
 
-    <p>
-        <code>astronomy.js</code>는 다른 라이브러리 의존성 없이 독립적으로 작동합니다.<br>
-        필요한 계산 클래스만 <code>import</code>하여 본인의 프로젝트에 바로 사용하세요.
-    </p>
+    <h2>1. 시간 및 날짜 계산 (AstroTime)</h2>
+    <div class="card">
+        <div class="desc">율리우스일(JD) 및 항성시(LST)를 계산합니다.</div>
+        <pre><code>const year = 2024, month = 6, day = 21, h = 12, m = 0, s = 0;
 
-    <!-- 예제 1 -->
-    <h2>1. 율리우스일(JD) 및 시간 변환</h2>
-    <div class="code-section">
-        <pre><code>import { AstroTime } from '../js/core/astronomy.js';
+// 1. 율리우스일(JD) 계산
+const jd = AstroTime.jd(year, month, day, h, m, s);
+console.log('JD:', jd); // <span id="jd-out" class="output"></span>
 
-// 1. 특정 날짜의 율리우스일 계산
-const jd = AstroTime.jd(2024, 12, 25, 21, 0, 0);
-
-// 2. 서울(UTC+9, 경도 126.9) 기준 항성시 계산 객체 생성
-const at = new AstroTime(9, 126.9, 37.5);
-const lst = at.LCT2LST(jd); // 지방 항성시</code></pre>
-
-        <div id="result-jd" class="demo-box">계산 중...</div>
+// 2. 지방시(LCT) → 항성시(LST) 변환 (서울 기준)
+const astroTime = new AstroTime(9, 126.98, 37.57); // GMT+9, 경도, 위도
+const lst = astroTime.LCT2LST(jd);
+console.log('LST (Deg):', lst); // <span id="lst-out" class="output"></span></code></pre>
     </div>
 
-    <!-- 예제 2 -->
-    <h2>2. 좌표 투영 (EquiDistanceProjection)</h2>
-    <div class="code-section">
-        <pre><code>import { AstroMath, EquiDistanceProjection } from '../js/core/astronomy.js';
+    <h2>2. 태양 고도 및 남중 시각</h2>
+    <div class="card">
+        <div class="desc">특정 날짜의 태양 남중 시각(진정오)을 계산합니다.</div>
+        <pre><code>const solarNoon = astroTime.lasn(2024, 6, 21);
+console.log('서울 남중 시각:', solarNoon.toFixed(2) + '시'); // <span id="noon-out" class="output"></span></code></pre>
+    </div>
 
-// 관측지 위도(서울) 기준 투영기 생성
-const proj = new EquiDistanceProjection(300, 37.5 * AstroMath.D2R);
+    <h2>3. 좌표계 변환 (AstroVector)</h2>
+    <div class="card">
+        <div class="desc">적도 좌표(RA/Dec)를 지평 좌표(Alt/Az)로 변환하거나 그 반대를 수행합니다.</div>
+        <pre><code>import { AstroVector, AstroMatrix } from '...';
 
-// 적경(RA) 6h, 적위(Dec) 45도인 별의 화면 x, y 좌표
-const pos = proj.project(6 * AstroMath.H2R, 45 * AstroMath.D2R);</code></pre>
+const star = new AstroVector();
+// 적경 2.5h, 적위 89.26도 (북극성 근처) 설정
+star.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
 
-        <div id="result-proj" class="demo-box">계산 중...</div>
+// 변환 행렬 생성 (LST와 위도 필요)
+const matrix = new AstroMatrix();
+matrix.equ2hor(lst * AstroMath.D2R, 37.57 * AstroMath.D2R);
+
+const horVector = new AstroVector();
+horVector.multiply(matrix, star);
+
+console.log('방위각:', (horVector.lon() * AstroMath.R2D).toFixed(2)); // <span id="az-out" class="output"></span>
+console.log('고도:', (horVector.lat() * AstroMath.R2D).toFixed(2));   // <span id="alt-out" class="output"></span></code></pre>
+    </div>
+
+    <h2>4. 2D 투영 (EquiDistanceProjection)</h2>
+    <div class="card">
+        <div class="desc">천구의 3D 좌표를 별자리판과 같은 2D 평면에 투영합니다.</div>
+        <pre><code>import { EquiDistanceProjection } from '...';
+
+const radius = 300; // 별자리판 반경
+const proj = new EquiDistanceProjection(radius, 37.57 * AstroMath.D2R);
+
+const { x, y } = proj.project(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
+console.log('SVG 좌표:', x.toFixed(1), y.toFixed(1)); // <span id="proj-out" class="output"></span></code></pre>
     </div>
 
     <script type="module">
-        import { AstroMath, AstroTime, EquiDistanceProjection } from '../js/core/astronomy.js';
+        import { AstroTime, AstroMath, AstroVector, AstroMatrix, EquiDistanceProjection } from '../index.js';
 
-        // 1. JD 데모
-        const now = new Date();
-        const jdNow = AstroTime.jd(now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
-        document.getElementById('result-jd').innerText = `현재 시각 JD: ${jdNow.toFixed(6)}`;
+        // 계산 시연
+        const jd = AstroTime.jd(2024, 6, 21, 12, 0, 0);
+        document.getElementById('jd-out').innerText = jd;
 
-        // 2. 투영 데모
-        const proj = new EquiDistanceProjection(200, 37.5 * AstroMath.D2R);
-        const pos = proj.project(0, 89.2 * AstroMath.D2R); // 북극성 근처
-        document.getElementById('result-proj').innerText = `북극성 투영 좌표: x=${pos.x.toFixed(1)}, y=${pos.y.toFixed(1)}`;
+        const astroTime = new AstroTime(9, 126.98, 37.57);
+        const lst = astroTime.LCT2LST(jd);
+        document.getElementById('lst-out').innerText = lst.toFixed(4) + '°';
+
+        const solarNoon = astroTime.lasn(2024, 6, 21);
+        document.getElementById('noon-out').innerText = solarNoon.toFixed(2) + '시';
+
+        const star = new AstroVector();
+        star.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
+        const matrix = new AstroMatrix();
+        matrix.equ2hor(lst * AstroMath.D2R, 37.57 * AstroMath.D2R);
+        const horVector = new AstroVector();
+        horVector.multiply(matrix, star);
+        document.getElementById('az-out').innerText = (horVector.lon() * AstroMath.R2D).toFixed(2) + '°';
+        document.getElementById('alt-out').innerText = (horVector.lat() * AstroMath.R2D).toFixed(2) + '°';
+
+        const proj = new EquiDistanceProjection(300, 37.57 * AstroMath.D2R);
+        const { x, y } = proj.project(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
+        document.getElementById('proj-out').innerText = `x: ${x.toFixed(1)}, y: ${y.toFixed(1)}`;
     </script>
 </body>
 

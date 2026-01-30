@@ -485,21 +485,14 @@ export default class LocationModal {
     }
 
     async #autoLookupTimezone(lat, lon) {
-        if (this.#tzInfo) this.#tzInfo.textContent = "타임존 로딩중...";
+        if (this.#tzInfo) this.#tzInfo.textContent = "타임존 검색중...";
 
-        const success = await TimezoneService.loadLibrary();
-        if (success) {
-            const tzName = TimezoneService.getTimezoneName(lat, lon);
+        const tzName = await TimezoneService.getTimezoneName(lat, lon);
 
-            if (tzName) {
-                this.#tempDgmt = TimezoneService.getOffsetFromTimezone(tzName);
-                this.#tempTzName = tzName;
-                if (this.#tzInfo) this.#tzInfo.textContent = tzName;
-            } else {
-                this.#tempDgmt = TimezoneService.getGeographicOffset(lon);
-                this.#tempTzName = "";
-                if (this.#tzInfo) this.#tzInfo.textContent = "지리적 표준시 사용";
-            }
+        if (tzName) {
+            this.#tempDgmt = TimezoneService.getOffsetFromTimezone(tzName);
+            this.#tempTzName = tzName;
+            if (this.#tzInfo) this.#tzInfo.textContent = tzName;
         } else {
             this.#tempDgmt = TimezoneService.getGeographicOffset(lon);
             this.#tempTzName = "";

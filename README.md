@@ -24,23 +24,50 @@
 ---
 
 
-## 빠른 시작
+---
 
-### 웹에서 바로 사용
-[https://jidolstar.github.io/planisphere-js/](https://jidolstar.github.io/planisphere-js/)
 
-### 로컬에서 실행
-```bash
-# Docker 사용 (권장)
-docker-compose up -d
-# http://localhost:8080 접속
+## 설치 및 사용
 
-# 또는 Python
-python -m http.server 8080
+### 1. CDN을 이용한 직접 사용 (가장 간단함)
+별도의 설치 없이 HTML에서 바로 사용할 수 있습니다.
+
+```html
+<div id="planisphere" style="width:100%; height:600px;"></div>
+
+<script type="module">
+  import Planisphere from 'https://cdn.jsdelivr.net/npm/planisphere-js@1.3.0/index.js';
+
+  (async () => {
+    const ps = new Planisphere({
+      wrapperDomId: '#planisphere',
+      lon: 126.98,
+      lat: 37.57
+    });
+    await ps.initialize();
+  })();
+</script>
 ```
 
-> 자세한 개발 환경 설정은 [DEV.md](DEV.md)를 참조하세요.
-> 기술적인 상세 API 명세는 [API.md](API.md)에서 확인하실 수 있습니다.
+### 2. NPM을 이용한 설치
+현대적인 웹 개발 환경(Webpack, Vite 등)에서 사용하기 적합합니다.
+
+```bash
+npm install planisphere-js
+```
+
+```javascript
+import Planisphere from 'planisphere-js';
+
+(async () => {
+  const ps = new Planisphere({
+    wrapperDomId: '#planisphere',
+    lon: 126.98,
+    lat: 37.57
+  });
+  await ps.initialize();
+})();
+```
 
 
 ---
@@ -55,19 +82,25 @@ python -m http.server 8080
 ```javascript
 import Planisphere from './js/core/planisphere.js';
 
-// 별자리판 생성 (서울 기준)
-const planisphere = new Planisphere({
-    wrapperDomId: '#planisphere',
-    currentDate: new Date(),
-    lon: 126.98,   // 경도 (동경)
-    lat: 37.57,    // 위도 (북위)
-    dgmt: 9        // UTC+9 (한국 표준시)
-});
+(async () => {
+  // 별자리판 생성 (서울 기준)
+  const planisphere = new Planisphere({
+      wrapperDomId: '#planisphere',
+      currentDate: new Date(),
+      lon: 126.98,   // 경도 (동경)
+      lat: 37.57,    // 위도 (북위)
+      dgmt: 9,       // UTC+9 (한국 표준시)
+      tzName: 'Asia/Seoul'  // IANA 타임존 이름 (선택사항)
+  });
 
-// API
-planisphere.setDateTime(new Date(2024, 5, 21, 21, 0, 0));  // 날짜/시간 변경
-planisphere.setLocation(129.08, 35.18);                    // 위치 변경 (부산)
-planisphere.setTheme('dark');                              // 테마: 'default', 'dark', 'light'
+  // 비동기 초기화 (필수)
+  await planisphere.initialize();
+
+  // API 사용
+  planisphere.setDateTime(new Date(2024, 5, 21, 21, 0, 0));  // 날짜/시간 변경
+  await planisphere.setLocation(129.08, 35.18);              // 위치 변경 (부산)
+  planisphere.setTheme('dark');                              // 테마: 'default', 'dark', 'light'
+})();
 ```
 
 ### 천문학 라이브러리 독립 사용
@@ -89,7 +122,9 @@ const star = new AstroVector(0, 0, 0);
 star.setSphe(2.5 * AstroMath.H2R, 89.26 * AstroMath.D2R);
 ```
 
-> 예제 실행: `examples/basic-usage.html`, `examples/astronomy-standalone.html`
+> 온라인 데모:
+> - [별자리판 기본 사용 (Demo)](https://jidolstar.github.io/planisphere-js/examples/basic-usage.html)
+> - [천문학 라이브러리 독립 사용 (Demo)](https://jidolstar.github.io/planisphere-js/examples/astronomy-standalone.html)
 
 
 ---
@@ -172,8 +207,9 @@ planisphere-js/
 | `Planisphere` | 메인 컨트롤러, Public API 제공 |
 
 **Public API:**
+- `async initialize()` - 비동기 초기화 (타임존 로드 및 렌더링, 생성자 후 필수 호출)
 - `setDateTime(date)` - 날짜/시간 설정
-- `setLocation(lon, lat, dgmt, tzName)` - 관측 위치 및 타임존 설정
+- `async setLocation(lon, lat, dgmt, tzName)` - 관측 위치 및 타임존 설정
 - `setTheme(themeName)` - 테마 변경
 - `render()` - 명시적 렌더링
 

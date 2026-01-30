@@ -3,7 +3,7 @@
 ## Docker로 개발 환경 실행
 
 ### 요구사항 및 의존성
-- **SVG.js 3.2**: 렌더링 엔진 (CDN 로드)
+- **SVG.js 3.2**: 렌더링 엔진 (Planisphere JS 내부에서 ESM으로 자동 로드)
 - **tz-lookup**: 타임존 데이터 (런타임에 UNPKG에서 동적 로드)
 - **Docker** (로컬 실행 권장)
 - **Node.js 18+** (단위 테스트 실행용)

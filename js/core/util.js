@@ -92,10 +92,11 @@ export const TimezoneService = {
     _loading: false,
 
     /**
-     * 외부 타임존 라이브러리를 동적으로 로드합니다.
+     * 외부 타임존 라이브러리를 동적으로 로드합니다. (내부 전용)
+     * @private
      * @returns {Promise<boolean>} 로드 성공 여부
      */
-    async loadLibrary() {
+    async _loadLibrary() {
         if (this._lookup) return true;
         if (this._loading) return false;
 
@@ -129,11 +130,15 @@ export const TimezoneService = {
 
     /**
      * 위도/경도를 기반으로 IANA 타임존 이름을 반환합니다.
+     * 라이브러리가 로드되지 않은 경우 자동으로 로드를 시도합니다.
      * @param {number} lat 
      * @param {number} lon 
-     * @returns {string|null}
+     * @returns {Promise<string|null>}
      */
-    getTimezoneName(lat, lon) {
+    async getTimezoneName(lat, lon) {
+        if (!this._lookup) {
+            await this._loadLibrary();
+        }
         if (!this._lookup) return null;
         try {
             return this._lookup(lat, lon);

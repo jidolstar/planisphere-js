@@ -42,15 +42,14 @@ import {
     EquiDistanceProjection
 } from './astronomy.js';
 
-import { Env } from './util.js';
+import { Env, TimezoneService } from './util.js';
 
 // 상수 import
 import {
     DEFAULT_LOCATION,
     DEFAULT_LATITUDE,
     DEFAULT_LONGITUDE,
-    DEFAULT_TIMEZONE,
-    DEFAULT_TIMEZONE_NAME,
+    VERSION,
     SPECTRAL_COLORS,
     STORAGE_KEYS
 } from './constants.js';
@@ -559,6 +558,22 @@ class Planisphere {
     #styles;
     /** @type {string} */
     #tzName;
+    /** @type {number} */
+    #dgmt;
+
+    // Initial parameters (stored in constructor, used in initialize)
+    /** @type {string} */
+    #wrapperDomId;
+    /** @type {number} */
+    #initialLon;
+    /** @type {number} */
+    #initialLat;
+    /** @type {number} */
+    #initialDgmt;
+    /** @type {string} */
+    #initialTzName;
+    /** @type {Object} */
+    #initialStyles;
 
     /**
      * Planisphere 인스턴스 생성
@@ -567,9 +582,9 @@ class Planisphere {
      * @param {Date} [options.currentDate=new Date()] - 초기 날짜/시간
      * @param {number} [options.lon=126.98] - 경도 (동경 양수, -180 ~ 180)
      * @param {number} [options.lat=37.57] - 위도 (북위 양수, ±20° ~ ±90°)
-     * @param {number} [options.dgmt=9] - UTC 오프셋 (예: 한국 표준시 = 9)
+     * @param {number} [options.dgmt] - UTC 오프셋 (미지정 시 lon 기반 자동 계산)
+     * @param {string} [options.tzName] - 타임존 이름
      * @param {Object} [options.styles={}] - 커스텀 스타일 오버라이드
-     * @param {string} [options.version='1.0.0'] - 표시할 버전 문자열
      * @throws {Error} wrapperDomId가 없거나, 위도가 범위를 벗어난 경우
      */
     constructor({
@@ -577,39 +592,77 @@ class Planisphere {
         currentDate = new Date(),
         lon = DEFAULT_LONGITUDE,
         lat = DEFAULT_LATITUDE,
-        dgmt = DEFAULT_TIMEZONE,
-        tzName = DEFAULT_TIMEZONE_NAME,
-        styles = {},
-        version = '1.0.0'
+        dgmt,
+        tzName,
+        styles = {}
     }) {
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
-        this.#tzName = tzName;
-
         if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
         if (Math.abs(lat) < 10) throw new Error("적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.");
 
+        // 경도 정규화
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
-        //스타일 관련 
-        this.#styles = Object.assign({}, Planisphere.defaultStyles, styles);
-
-        //좌표 관련 
-        this.#version = version;
-        this.#radius = this.#width * 0.5 - this.#deltaX * 2;
-
+        // 매개변수 저장 (initialize()에서 사용)
+        this.#wrapperDomId = wrapperDomId;
         this.#currentDate = currentDate;
-        this.#astroTime = new AstroTime(dgmt, lon, lat);
+        this.#initialLon = lon;
+        this.#initialLat = lat;
+        this.#initialDgmt = dgmt ?? 0;
+        this.#initialTzName = tzName || "";
+        this.#initialStyles = styles;
+    }
+
+    /**
+     * 비동기 초기화 메서드
+     * 
+     * 생성자 호출 후 반드시 이 메서드를 호출하여 타임존 정보를 완전히 초기화해야 합니다.
+     * 생성자에서 tzName이 제공되지 않은 경우, 이 메서드가 실제 타임존 이름을 로드합니다.
+     * 
+     * @returns {Promise<void>}
+     */
+    async initialize() {
+        // 1. 타임존 설정
+        this.#tzName = this.#initialTzName;
+        this.#dgmt = this.#initialDgmt;
+
+        // 타임존 이름이 제공되지 않은 경우 라이브러리에서 가져오기
+        if (!this.#tzName) {
+            const resolvedTzName = await TimezoneService.getTimezoneName(
+                this.#initialLat,
+                this.#initialLon
+            );
+            if (resolvedTzName) {
+                this.#tzName = resolvedTzName;
+            }
+        }
+
+        // dgmt 계산: tzName이 있으면 타임존 기반, 없으면 지리적 오프셋
+        if (this.#dgmt === 0) {
+            if (this.#tzName) {
+                this.#dgmt = TimezoneService.getOffsetFromTimezone(this.#tzName);
+            } else {
+                this.#dgmt = TimezoneService.getGeographicOffset(this.#initialLon);
+            }
+        }
+
+        // 2. 스타일 설정
+        this.#styles = Object.assign({}, Planisphere.defaultStyles, this.#initialStyles);
+
+        // 3. 좌표 관련 초기화
+        this.#version = VERSION;
+        this.#radius = this.#width * 0.5 - this.#deltaX * 2;
+        this.#astroTime = new AstroTime(this.#dgmt, this.#initialLon, this.#initialLat);
         this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
         this.#lct = AstroTime.jd(this.#currentDate.getFullYear(), this.#currentDate.getMonth() + 1, this.#currentDate.getDate(), this.#currentDate.getHours(), this.#currentDate.getMinutes(), this.#currentDate.getSeconds());
         this.#ut = this.#astroTime.LCT2UT(this.#lct);
         this.#gst = AstroTime.UT2GST(this.#ut);
         this.#lst = this.#astroTime.LCT2LST(this.#lct);
-
-        this.#proj = new EquiDistanceProjection(this.#radius, lat * AstroMath.D2R);
+        this.#proj = new EquiDistanceProjection(this.#radius, this.#initialLat * AstroMath.D2R);
         this.#limitDE = this.#proj.limitDE;
 
-        // wrapper 
-        const wrapper = document.querySelector(wrapperDomId);
+        // 4. DOM 설정
+        const wrapper = document.querySelector(this.#wrapperDomId);
         wrapper.innerHTML = '';
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
@@ -631,10 +684,11 @@ class Planisphere {
         planisphereDiv.style.position = 'relative';
         wrapper.appendChild(planisphereDiv);
 
-        //부모 Dom
+        // 부모 Dom
         this.#parentDom = planisphereDiv;
 
-        //Sky
+        // 5. SVG 패널 생성
+        // Sky
         this.#skyPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
@@ -642,7 +696,7 @@ class Planisphere {
         this.#skyPanel.node.style.touchAction = 'none';
         this.#skyGroup = this.#skyPanel.group();
 
-        //Top
+        // Top
         this.#topPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
@@ -650,7 +704,7 @@ class Planisphere {
         this.#topPanel.node.style.touchAction = 'none';
         this.#topGroup = this.#topPanel.group();
 
-        //Info
+        // Info
         this.#infoPanel = SVG().addTo(this.#parentDom)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .css({ position: 'absolute', left: 0, right: 0, overflow: 'visible' })
@@ -658,17 +712,18 @@ class Planisphere {
         this.#infoPanel.node.style.touchAction = 'none';
         this.#infoGroup = this.#infoPanel.group();
 
-        // InputHandler로 입력 처리 통합
+        // 6. InputHandler 설정
         this.#inputHandler = new InputHandler(this.#parentDom, {
             onTransform: (rotation, scale, panX, panY) => {
                 this.#applyTransform(rotation, scale, panX, panY);
             }
         });
 
-        this.setStyles(styles, true);
-
-        // 창 크기 변경 시 대응
+        // 7. 창 크기 변경 이벤트
         window.addEventListener('resize', this.#resize.bind(this));
+
+        // 8. 초기 렌더링 수행
+        this.setStyles(this.#styles, true);
     }
 
     /** @type {Date} */
@@ -741,7 +796,7 @@ class Planisphere {
      * @param {number} [dgmt] - (Optional) 새로운 UTC 오프셋. 생략 시 기존 값 유지.
      * @param {string} [tzName] - (Optional) 새로운 타임존 이름. 생략 시 기존 값 유지.
      */
-    setLocation(lon, lat, dgmt, tzName) {
+    async setLocation(lon, lat, dgmt, tzName) {
         // 경도 정규화
         lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
@@ -752,11 +807,13 @@ class Planisphere {
             throw new RangeError('적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.');
         }
 
-        // AstroTime 재생성
-        const newDgmt = (dgmt !== undefined) ? dgmt : this.#astroTime.dgmt;
-        if (tzName !== undefined) this.#tzName = tzName;
+        // 시간대 설정 (명시적 값이 없으면 신규 좌표 기반으로 재계산)
+        const finalTzName = (tzName != null) ? tzName : (await TimezoneService.getTimezoneName(lat, lon) || this.#tzName);
+        const finalDgmt = (dgmt != null) ? dgmt : (finalTzName ? TimezoneService.getOffsetFromTimezone(finalTzName) : TimezoneService.getGeographicOffset(lon));
 
-        this.#astroTime = new AstroTime(newDgmt, lon, lat);
+        this.#tzName = finalTzName;
+        this.#dgmt = finalDgmt;
+        this.#astroTime = new AstroTime(this.#dgmt, lon, lat);
         this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
 
         // 투영 재생성
