@@ -948,25 +948,35 @@ export class EquiDistanceProjection {
     #limitDE;
     #screenCoord;
     #virtualCelestrialRadius;
+    #centerDE;
+    #isSouthern;
 
     /**
      * EquiDistanceProjection 인스턴스 생성
      *
      * 화면 반경과 적위 한계값으로 천구의 가상 반경을 계산합니다.
+     * 관측지 위도에 따라 북극 중심 또는 남극 중심 투영을 선택합니다.
      *
      * @param {number} screenRadius - 화면상 별자리판 원의 반경 (픽셀)
-     * @param {number} limitDE - 표시할 적위의 하한값 (라디안, 음수면 남반구까지 표시)
+     * @param {number} limitDE - 표시할 적위의 한계값 (라디안)
+     * @param {number} lat - 관측지 위도 (라디안)
      */
-    constructor(screenRadius, limitDE) {
-        this.#screenRadius = screenRadius
-        this.#limitDE = limitDE
+    constructor(screenRadius, limitDE, lat = 37.5 * AstroMath.D2R) {
+        this.#screenRadius = screenRadius;
+        this.#limitDE = limitDE;
         this.#screenCoord = new AstroPoint(0, 0);
-        this.#virtualCelestrialRadius = screenRadius / Math.abs(AstroMath.HPI - limitDE);
+
+        this.#isSouthern = lat < 0;
+        this.#centerDE = this.#isSouthern ? -AstroMath.HPI : AstroMath.HPI;
+
+        // 가상 천구 반경: 중심(극)에서 한계(limitDE) 사이의 각거리와 화면 반경 비율
+        this.#virtualCelestrialRadius = screenRadius / Math.abs(this.#centerDE - limitDE);
     }
 
     get screenRadius() { return this.#screenRadius; }
     get limitDE() { return this.#limitDE; }
     get virtualCelestrialRadius() { return this.#virtualCelestrialRadius; }
+    get isSouthern() { return this.#isSouthern; }
 
     /**
      * 적경/적위를 화면 좌표로 투영
@@ -977,9 +987,30 @@ export class EquiDistanceProjection {
      *       값을 보존하려면 복사 필요
      */
     project(ra, dec) {
-        const decScreen = (AstroMath.HPI - dec) * this.#virtualCelestrialRadius;
-        this.#screenCoord.x = decScreen * Math.cos(ra);
-        this.#screenCoord.y = decScreen * Math.sin(ra);
+        // 중심(극)으로부터의 각거리에 비례한 화면 거리 계산
+        const decScreen = Math.abs(this.#centerDE - dec) * this.#virtualCelestrialRadius;
+
+        // 남반구 투영 시 RA 방향을 뒤집어(시계방향 증가) 자연스러운 움직임을 유도합니다.
+        const angle = this.#isSouthern ? -ra : ra;
+
+        this.#screenCoord.x = decScreen * Math.cos(angle);
+        this.#screenCoord.y = decScreen * Math.sin(angle);
         return this.#screenCoord;
+    }
+
+    /**
+     * 위도에 따른 적절한 적위 한계값(limitDE) 계산
+     * @param {number} lat - 관측지 위도 (라디안)
+     * @param {number} buffer - 추가 여유분 (라디안, 기본 20도)
+     * @returns {number} 적위 한계값 (라디안)
+     */
+    static calculateLimitDE(lat, buffer = 20 * AstroMath.D2R) {
+        if (lat >= 0) {
+            // 북반구: 위도 - 90도 (지평선) - 여유분
+            return Math.max(-AstroMath.HPI, lat - AstroMath.HPI - buffer);
+        } else {
+            // 남반구: 위도 + 90도 (지평선) + 여유분
+            return Math.min(AstroMath.HPI, lat + AstroMath.HPI + buffer);
+        }
     }
 }

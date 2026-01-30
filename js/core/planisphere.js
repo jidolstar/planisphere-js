@@ -47,6 +47,8 @@ import { Env } from './util.js';
 // 상수 import
 import {
     DEFAULT_LOCATION,
+    DEFAULT_LATITUDE,
+    DEFAULT_LONGITUDE,
     DEFAULT_TIMEZONE,
     DEFAULT_TIMEZONE_NAME,
     SPECTRAL_COLORS,
@@ -579,11 +581,12 @@ class Planisphere {
     }) {
         if (!wrapperDomId) throw new Error("wrapperDomId는 필수입니다.");
         this.#tzName = tzName;
-        this.#limitDE = -70 * AstroMath.D2R
-        lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
         if (lat < -90 || lat > 90) throw new Error("위도(lat)는 -90° ~ +90° 범위여야 합니다.");
         if (Math.abs(lat) < 10) throw new Error("적도 ±10° 이내에서는 별자리판 생성이 불안정합니다.");
+
+        this.#limitDE = EquiDistanceProjection.calculateLimitDE(lat * AstroMath.D2R);
+        lon = ((lon + 180) % 360 + 360) % 360 - 180;
 
         //스타일 관련 
         this.#styles = Object.assign({}, Planisphere.defaultStyles, styles);
@@ -600,7 +603,7 @@ class Planisphere {
         this.#gst = AstroTime.UT2GST(this.#ut);
         this.#lst = this.#astroTime.LCT2LST(this.#lct);
 
-        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE);
+        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE, lat * AstroMath.D2R);
 
         // wrapper 
         const wrapper = document.querySelector(wrapperDomId);
@@ -732,8 +735,9 @@ class Planisphere {
         this.#astroTime = new AstroTime(newDgmt, lon, lat);
         this.#deltaCulminationTime = this.#astroTime.dgmt * AstroMath.H2R - this.#astroTime.glon;
 
-        // 투영 재생성 및 갱신
-        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE);
+        // 투영 및 한계 적위 재생성
+        this.#limitDE = EquiDistanceProjection.calculateLimitDE(lat * AstroMath.D2R);
+        this.#proj = new EquiDistanceProjection(this.#radius, this.#limitDE, lat * AstroMath.D2R);
 
         // LST 갱신 (위치 필수 업데이트 항목)
         this.#lst = this.#astroTime.LCT2LST(this.#lct);
@@ -782,8 +786,10 @@ class Planisphere {
 
     #rotateCurrentDate(isResetInput = true) {
         // Local Sidereal Time 만큼 회전시켜준다.
-        // 즉, 남중해야할 별이 화면 아래로 향하게 한다.
-        let rotation = -(AstroTime.jd2Time(this.#lst) * AstroMath.H2R * AstroMath.R2D - 90.0);
+        // 즉, 남중해야할 별이 화면 아래(South/North)로 향하게 한다.
+        const lstDeg = AstroTime.jd2Time(this.#lst) * AstroMath.H2R * AstroMath.R2D;
+        const direction = this.#proj.isSouthern ? -1 : 1;
+        let rotation = -(direction * lstDeg - 90.0);
         this.#skyRotation = rotation;
         if (isResetInput) this.#topPanelRotation = rotation;
 
