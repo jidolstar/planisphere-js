@@ -29,7 +29,7 @@
 <div id="planisphere" style="width:100%; height:600px;"></div>
 
 <script type="module">
-  import Planisphere from 'https://cdn.jsdelivr.net/npm/planisphere-js@1.3.0/index.js';
+  import Planisphere from 'https://cdn.jsdelivr.net/npm/planisphere-js/index.js';
 
   (async () => {
     const ps = new Planisphere({
@@ -211,7 +211,7 @@ npm run test:watch
 
 ## 버전
 
-- **1.3.0 / 2026-01-31** : 남반구 지원 및 레이아웃 최적화
+- **1.3.4 / 2026-01-31** : 남반구 지원 및 레이아웃 최적화
   - **남반구 공식 지원**: 위도에 따른 렌더링 방향 및 투영 수식을 최적화하여 남반구에서도 정확한 별자리판 제공
   - **다이내믹 UI 레이아웃**: 위도(고위도/저위도)에 따라 별자리판의 크기와 한계 적위가 유연하게 조절되는 동적 레이아웃 적용
   - **상태 유지 기능**: 테마 변경 시에도 현재의 확대 배율(Zoom)과 이동 위치(Pan)가 초기화되지 않고 유지되도록 개선
