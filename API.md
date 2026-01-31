@@ -60,11 +60,12 @@
 ### Planisphere (Class)
 메인 컨트롤러입니다.
 
-- `constructor(options)`: 별자리판 초기화
+- `constructor(options)`: 별자리판 인스턴스 생성 (매개변수 검증 및 저장만 수행)
+- `async initialize()`: **[필수]** 비동기 초기화 (타임존 로드, DOM 설정, SVG 패널 생성 및 최초 렌더링 수행)
 - `setDateTime(date)`: 날짜/시간 설정
-- `setLocation(lon, lat, dgmt, tzName)`: 장소 및 타임존 설정
+- `async setLocation(lon, lat, dgmt, tzName)`: 장소 및 타임존 설정 (비동기로 타임존 재로드 및 렌더링 수행)
 - `setTheme(themeName)`: 테마 설정 (현재의 Zoom/Pan 등 변환 상태 유지)
-- `render()`: 별자리판 강제 업데이트
+- `render()`: 별자리판 강제 업데이트 (데이터 변경 없이 다시 그릴 때 사용)
 
 ## app/ (애플리케이션 UI)
 
@@ -113,12 +114,11 @@ SVG.js를 사용하여 모든 시각적 요소를 그립니다.
 - `isWindows()`: Windows 플랫폼 여부
 
 ### TimezoneService (Object)
-타임존 데이터 로드 및 변환 기능을 제공합니다.
+타임존 데이터 로드 및 변환 기능을 제공합니다. 모든 메서드는 내부적으로 라이브러리 로드를 자동으로 기다립니다.
 
-- `async loadLibrary()`: `tz-lookup` 라이브러리를 UNPKG에서 동적으로 로드
-- `getTimezoneName(lat, lon)`: 특정 좌표의 IANA 타임존 이름 반환
-- `getOffsetFromTimezone(tzName, date)`: 타임존 이름 기준 현재 오프셋 계산
-- `getGeographicOffset(lon)`: 경도 기준 물리적 오프셋(fallback) 계산
+- `getTimezoneName(lat, lon)`: 특정 좌표의 IANA 타임존 이름 반환 (비동기)
+- `getOffsetFromTimezone(tzName, date)`: 타임존 이름 기준 현재 오프셋 계산 (동기, 라이브러리 로드 후 사용 권장)
+- `getGeographicOffset(lon)`: 경도 기준 물리적 오프셋(fallback) 계산 (동기)
 
 ---
 
@@ -132,9 +132,10 @@ SVG.js를 사용하여 모든 시각적 요소를 그립니다.
 
 ## constants.js (상수)
 
-- `DEFAULT_LOCATION`: 기본 위치 (서울)
-- `DEFAULT_TIMEZONE`: 기본 시간대 (UTC+9)
-- `DEFAULT_TIMEZONE_NAME`: 기본 타임존 이름 (`Asia/Seoul`)
+- `VERSION`: 프로젝트 버전 정보 (`1.3.1`)
+- `DEFAULT_LONGITUDE`: 기본 경도 (126.98)
+- `DEFAULT_LATITUDE`: 기본 위도 (37.57)
+- `DEFAULT_LOCATION`: 기본 위치 객체 (`{ lon, lat }`)
 - `MAGNITUDE_LIMIT`: 표시 등급 제한 (기본 6등급)
 - `SPECTRAL_COLORS`: 별의 분광형별 색상 매핑
 - `STORAGE_KEYS`: 로컬 스토리지 키 정의

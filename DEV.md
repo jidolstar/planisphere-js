@@ -136,6 +136,14 @@ js/__tests__/
 - **방위각 (RA) 처리**: 남반구 투영(`isSouthern: true`) 시 별의 일주 운동 방향을 맞추기 위해 적경(RA) 값에 음수 부호를 적용하여 투영합니다.
 
 ### 타임존 하이브리드 전략
-1. **정밀 검색**: `TimezoneService`를 통해 `tz-lookup` 라이브러리를 동적으로 `fetch`하여 IANA 타임존 명칭과 오프셋을 추출합니다.
+1. **정밀 검색**: `TimezoneService`를 통해 `tz-lookup` 라이브러리를 동적으로 `fetch`하여 IANA 타임존 명칭과 오프셋을 추출합니다. 이 과정은 `Planisphere.initialize()` 호출 시 자동으로 수행됩니다.
 2. **지리적 폴백**: 라이브러리 로드가 실패하거나 해당 좌표의 타임존 데이터가 없을 경우, 경도 15도당 1시간(`round(lon/15)`)으로 계산하는 물리적 표준시를 사용합니다.
 3. **수동 설정**: 사용자가 UI에서 오프셋을 직접 수정하면 자동 계산값보다 우선순위를 가집니다.
+
+### 초기화 패턴
+생성자는 설정값의 유효성 검사만 수행하며, 실제 무거운 작업(타임존 로드, SVG 생성)은 `initialize()`에서 수행합니다.
+
+```javascript
+const ps = new Planisphere(config);
+await ps.initialize(); // 반드시 await로 초기화 완료를 대기해야 함
+```
