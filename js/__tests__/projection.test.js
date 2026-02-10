@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EquiDistanceProjection, AstroMath } from '../astronomy.js';
+import { EquiDistanceProjection, AstroMath } from '../core/astronomy.js';
 
 describe('EquiDistanceProjection', () => {
     describe('생성자 및 초기화', () => {

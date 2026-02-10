@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AstroTime, AstroMath } from '../astronomy.js';
+import { AstroTime, AstroMath } from '../core/astronomy.js';
 
 describe('AstroTime', () => {
     describe('isLeapYear() - 윤년 판단', () => {

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { AstroMath } from '../astronomy.js';
+import { AstroMath } from '../core/astronomy.js';
 
 describe('AstroMath', () => {
     describe('상수 검증', () => {

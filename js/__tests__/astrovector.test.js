@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AstroVector, AstroMatrix, AstroPoint, AstroMath, AstroTime } from '../astronomy.js';
+import { AstroVector, AstroMatrix, AstroPoint, AstroMath, AstroTime } from '../core/astronomy.js';
 
 describe('AstroPoint', () => {
     it('2D 좌표 생성', () => {
