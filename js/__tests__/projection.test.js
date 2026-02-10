@@ -8,24 +8,27 @@ import { EquiDistanceProjection, AstroMath } from '../core/astronomy.js';
 
 describe('EquiDistanceProjection', () => {
     describe('생성자 및 초기화', () => {
-        it('화면 반경과 적위 한계 설정', () => {
+it('화면 반경과 적위 한계 설정', () => {
             const screenRadius = 300;
-            const limitDE = -30 * AstroMath.D2R; // -30도
+            const lat = 80 * AstroMath.D2R; // 테스트용 위도
 
-            const proj = new EquiDistanceProjection(screenRadius, limitDE);
+            const proj = new EquiDistanceProjection(screenRadius, lat);
 
             expect(proj.screenRadius).toBe(300);
-            expect(proj.limitDE).toBeCloseTo(-30 * AstroMath.D2R, 10);
+            // 위도 80°에서의 적위 한계값은 calculateLimitDE로 계산
+            const expectedLimitDE = EquiDistanceProjection.calculateLimitDE(lat);
+            expect(proj.limitDE).toBeCloseTo(expectedLimitDE, 10);
         });
 
-        it('가상 천구 반경 계산', () => {
+it('가상 천구 반경 계산', () => {
             const screenRadius = 300;
-            const limitDE = -30 * AstroMath.D2R;
+            const lat = 80 * AstroMath.D2R; // 테스트용 위도
 
-            const proj = new EquiDistanceProjection(screenRadius, limitDE);
+            const proj = new EquiDistanceProjection(screenRadius, lat);
+            const limitDE = EquiDistanceProjection.calculateLimitDE(lat);
 
             // virtualCelestrialRadius = screenRadius / |HPI - limitDE|
-            // = 300 / |π/2 - (-π/6)| = 300 / |π/2 + π/6| = 300 / (2π/3)
+            // = 300 / |π/2 - calculated_limitDE|
             const expectedRadius = screenRadius / Math.abs(AstroMath.HPI - limitDE);
             expect(proj.virtualCelestrialRadius).toBeCloseTo(expectedRadius, 10);
         });
@@ -34,9 +37,10 @@ describe('EquiDistanceProjection', () => {
     describe('project() - 투영 계산', () => {
         let proj;
 
-        beforeEach(() => {
-            // 화면 반경 300px, 적위 한계 -30도 (120도 범위)
-            proj = new EquiDistanceProjection(300, -30 * AstroMath.D2R);
+beforeEach(() => {
+            // 화면 반경 300px, 위도 80° (적위 한계 약 -30도)
+            const testLat = 80 * AstroMath.D2R;
+            proj = new EquiDistanceProjection(300, testLat);
         });
 
         describe('북극 (적위 90도)', () => {
@@ -266,9 +270,11 @@ describe('EquiDistanceProjection', () => {
     });
 
     describe('적위 한계 변화', () => {
-        it('적위 한계가 더 낮으면 더 많은 영역 표시', () => {
-            const proj30 = new EquiDistanceProjection(300, -30 * AstroMath.D2R);
-            const proj60 = new EquiDistanceProjection(300, -60 * AstroMath.D2R);
+it('적위 한계가 더 낮으면 더 많은 영역 표시', () => {
+            // 위도 80° → 적위 한계 약 -30°
+            // 위도 50° → 적위 한계 약 -60°  
+            const proj30 = new EquiDistanceProjection(300, 80 * AstroMath.D2R);
+            const proj60 = new EquiDistanceProjection(300, 50 * AstroMath.D2R);
 
             // 적도 위치 비교
             const pos30 = proj30.project(0, 0);
